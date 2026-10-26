@@ -11,9 +11,10 @@ PRESETS = [
      "say": "Describe the device, what it must do and the numbers you know — or ask the AI to propose reasonable "
             "ones. It turns your words into equations, tolerances and requirements, and the stand proves the answer.",
      "give": "Whatever you have: a photo of a label, a datasheet, a sketch with numbers, or just words.",
-     "example": "An off-grid cabin has a 400 W solar panel and a 12 V 100 Ah battery that may be discharged to 50%. "
-                "A 60 W fridge runs 40% of the time. Propose reasonable losses and check that the battery alone keeps "
-                "the fridge running through 2 cloudy days, and that one sunny day (4.5 peak sun hours) refills it.",
+     "example": "An off-grid cabin has a 600 W solar panel and a 12 V 200 Ah lithium battery that may be discharged "
+                "to 20% (80% usable). A 60 W fridge runs 40% of the time. Propose reasonable losses and check that the "
+                "battery alone keeps the fridge running through 2 cloudy days, and that one sunny day (4.5 peak sun "
+                "hours) refills what those days used.",
      "inputs": ["photo", "pdf"]},
     {"id": "pump", "title": "Water pump — will it deliver?", "icon": "💧",
      "say": "Say what the pump must do (flow, lift height, pipe length and diameter) and ask whether this pump "
