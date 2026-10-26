@@ -13,7 +13,8 @@ async function api(path, body) {
 
 function showHint(p) {
   $("hint").innerHTML = `<div class="icon">${p.icon}</div>
-    <dl><dt>Tell the AI</dt><dd>${esc(p.say)}</dd><dt>Give it</dt><dd>${esc(p.give)}</dd></dl>
+    <dl><dt>Tell the AI</dt><dd>${esc(p.say)}</dd><dt>Give it</dt><dd>${esc(p.give)}</dd>
+    ${p.source ? `<dt>Source</dt><dd><a href="${esc(p.source)}" target="_blank" rel="noopener">${esc(p.source)}</a></dd>` : ""}</dl>
     <div class="example"><b>Example</b><br>${esc(p.example)}<br><button class="ghost small" id="useEx">Use this example${p.demo ? " (with demo file" + (p.demo.length > 1 ? "s" : "") + ")" : ""}</button></div>`;
   $("useEx").onclick = async () => {
     $("text").value = p.example;
@@ -31,7 +32,10 @@ function showHint(p) {
 
 async function init() {
   PRESETS = await api("/api/presets");
-  $("preset").innerHTML = PRESETS.map((p) => `<option value="${p.id}">${p.icon}  ${esc(p.title)}</option>`).join("");
+  const opt = (p) => `<option value="${p.id}">${p.icon}  ${esc(p.title)}</option>`;
+  const groups = [...new Set(PRESETS.map((p) => p.group || ""))];
+  $("preset").innerHTML = groups.map((g) => g ? `<optgroup label="${esc(g)}">${PRESETS.filter((p) => p.group === g).map(opt).join("")}</optgroup>`
+                                              : PRESETS.filter((p) => !p.group).map(opt).join("")).join("");
   $("preset").value = "pump";                // the default task (curator): the pump, first among the examples
   $("preset").onchange = () => showHint(PRESETS.find((p) => p.id === $("preset").value));
   // the session survives going to Help and back, and a server restart: its id is kept in this browser
@@ -149,13 +153,22 @@ function render(s0) {
   const shownRun = old ? VIEW.n : (s.runs && s.runs.length && !running && s.result && Object.keys(s.result).length ? s.runs[s.runs.length - 1].n : null);
   if (w) {
     // the stand's verdict is the answer; where its data came from is a note under it, not a second verdict
-    const v = r.verdict || w.status;
+    let v = r.verdict || w.status;
     const HEAD = { EARNED: "Proved: the design holds for every value the tolerances allow.",
                    REFUTED: "Refuted: the design fails at a concrete point — see Details.",
                    OPEN: "Undecided: the stand could not prove it either way, and does not guess." };
+    let extra = "";
+    if (r.find && r.proved) {
+      // a search: the headline is the limit found; the design as stated gets its own verdict line
+      const sought = s.brick && s.brick.quantities && s.brick.quantities[r.quantity];
+      HEAD[v] = `Found the limit: the ${r.find} ${r.quantity} that works is ${pretty(r.proved)} ${r.unit || ""}.`;
+      if (r.decision && r.decision.verdict && sought && sought.value !== undefined)
+        extra = `<span class="why">As stated (${esc(r.quantity)} = ${esc(sought.value)} ${esc(r.unit || "")}): <b>${esc(r.decision.verdict)}</b></span>`;
+      v = "FOUND";
+    }
     const ai = (s.values || []).filter((x) => x.from !== "file" && x.from !== "you").length;
-    $("verdict").className = `verdict ${chipClass(v)}`;
-    $("verdict").innerHTML = `<span class="chip">${esc(v)}</span><span class="head">${esc(HEAD[v] || w.headline)}</span>
+    $("verdict").className = `verdict ${v === "FOUND" ? "EARNED" : chipClass(v)}`;
+    $("verdict").innerHTML = `<span class="chip">${esc(v)}</span><span class="head">${esc(HEAD[r.verdict] && v === "FOUND" ? HEAD[r.verdict] : HEAD[v] || w.headline)}</span>${extra}
       ${s.question ? `<span class="why">Question: ${esc(s.question)}</span>` : ""}
       ${ai ? `<span class="note">${ai} of the values come from Muse Spark's reading of your words or files — check them
         in the table; change any and press Recalculate.</span>` : (s.values && s.values.length ? `<span class="note">Every value is yours.</span>` : "")}
@@ -234,7 +247,7 @@ function choice(d) {
   return [item, parts.join(", "), cat ? `(${cat})` : ""].filter(Boolean).join(" ");
 }
 function chipClass(st) {
-  return st === "EARNED" ? "EARNED" : st === "REFUTED" ? "REFUTED" : String(st).includes("CREDIT") ? "CREDIT" : "OPEN";
+  return st === "EARNED" || st === "FOUND" ? "EARNED" : st === "REFUTED" ? "REFUTED" : String(st).includes("CREDIT") ? "CREDIT" : "OPEN";
 }
 async function openRun(n) {
   const latest = S.runs[S.runs.length - 1].n;

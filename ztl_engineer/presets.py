@@ -117,6 +117,44 @@ PRESETS = [
      "inputs": ["deck"]},
 ]
 
+# Published worked examples the stand disagrees with — each re-checked from the source's own numbers. The finding is
+# not hackathon work (ztl-stand found them in Oct 2026, examples/real1-3); what is new is the app reaching it from
+# the plain-words question. The sources are linked, not copied: they are the manufacturers' documents.
+PRESETS += [
+    {"id": "pub-ti-slva423", "group": "Published examples — check them", "icon": "📄",
+     "title": "TI SLVA423 — is ±2.28% really the worst case?",
+     "source": "https://www.ti.com/lit/slva423",
+     "say": "A manufacturer's application note states a worst-case accuracy. Ask the stand to check it with the "
+            "note's own numbers.",
+     "give": "The numbers from Section 4 of the note (already in the example), or the PDF itself.",
+     "example": "TI application report SLVA423 (2010), Section 4: a TPS79901 regulator with a 1.193 V reference "
+                "(device accuracy ±1%) and a feedback divider of two ±1% resistors, R2 = 10 kΩ and R1 = 17.6614 kΩ, "
+                "for a 3.3 V rail, Vo = (1 + R1/R2)·Vref. The note says the worst-case total output accuracy is "
+                "±2.28%. Check it: does Vo stay within 3.3 V ±2.28% for every combination of tolerances?",
+     "inputs": ["pdf"]},
+    {"id": "pub-tc1264", "group": "Published examples — check them", "icon": "📄",
+     "title": "Microchip TC1264 — is 4.6 V input really safe?",
+     "source": "https://www.microchip.com/en-us/product/TC1264",
+     "say": "A datasheet's thermal example ends with a maximum input voltage. Ask the stand for the true limit.",
+     "give": "The numbers from Section 5.2 of the datasheet (already in the example).",
+     "example": "Microchip TC1264 datasheet, Section 5.2: a 2.7 V LDO (output accuracy ±0.5%) in SOT-223 with "
+                "θJA = 59 °C/W, load up to 275 mA, ambient up to 95 °C; the junction must stay at or below 125 °C. "
+                "Dissipation is (VIN − VOUT)·ILOAD. The datasheet concludes the input may go up to 4.6 V. What is the "
+                "largest input voltage that really keeps the junction at or below 125 °C?",
+     "inputs": ["pdf"]},
+    {"id": "pub-tps25221", "group": "Published examples — check them", "icon": "📄",
+     "title": "TI TPS25221 — does 49.9 kΩ guarantee 1 A?",
+     "source": "https://www.ti.com/lit/ds/symlink/tps25221.pdf",
+     "say": "A datasheet picks a resistor for a guaranteed current limit but leaves out the resistor's own tolerance. "
+            "Ask the stand whether the guarantee survives it.",
+     "give": "The datasheet's current-limit equation (already in the example).",
+     "example": "TI TPS25221 datasheet: the guaranteed minimum current-limit threshold is IOS_min = 56850 / RILIM^1.033 "
+                "mA with RILIM in kΩ (valid 20–210 kΩ). The datasheet picks a 49.9 kΩ 1% resistor so that current "
+                "limiting never starts below 1000 mA. With the resistor's own ±1% tolerance, is IOS_min ≥ 1000 mA "
+                "guaranteed? If not, what is the largest nominal RILIM that guarantees it?",
+     "inputs": ["pdf"]},
+]
+
 
 def by_id(pid: str) -> dict:
     for p in PRESETS:

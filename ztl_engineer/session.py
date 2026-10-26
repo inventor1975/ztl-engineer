@@ -422,7 +422,8 @@ class Session:
                                                                           if k != "trace"},
                 "result": {k: r[k] for k in keep if k in r}, "brick": self.brick, "usd": round(self.usd, 4),
                 "runs": [{"n": x["n"], "at": x["at"], "preset": x["preset"], "question": x["question"],
-                          "verdict": (x["result"] or {}).get("verdict"), "status": (x["warranty"] or {}).get("status")}
+                          "verdict": "FOUND" if (x["result"] or {}).get("find") and (x["result"] or {}).get("proved")
+                          else (x["result"] or {}).get("verdict"), "status": (x["warranty"] or {}).get("status")}
                          for x in self.runs],
                 "spent": meta.spent(), "cap": meta.CAP_USD}
 

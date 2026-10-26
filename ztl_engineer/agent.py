@@ -30,6 +30,9 @@ Rules:
   1000 kg/m^3) and label it "assumption". If the person ASKS you to propose or assume values ("make up the
   aircraft", "pick reasonable parameters"), do it: choose typical, defensible values, label every one "assumption"
   with a one-line reason in "where", and build the brick — do not ask for them back.
+- When you search a limit with "find", give the searched quantity the VALUE the person named for it (e.g. the
+  datasheet's chosen 49.9 kOhm): the stand then also judges that design as stated, and both answers are shown.
+  If no value was named, use any value inside the search range.
 - If the person states no explicit requirement, pose the natural engineering check for the question (e.g. "the
   smallest static thrust that keeps thrust-to-weight >= 1.1 and sustains level flight at cruise speed"), say so in
   "reply", and build it. Ask ("ready": false) only when even a reasonable assumption cannot fill the gap.
