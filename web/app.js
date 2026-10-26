@@ -196,7 +196,7 @@ function render(s0) {
   markChanged();
   // details
   $("detailsCard").hidden = !s.result || !Object.keys(r).length;
-  $("details").innerHTML = details(r);
+  $("details").innerHTML = details(r, s.brick);
   $("brick").textContent = s.brick ? JSON.stringify(s.brick, null, 2) : "";
   $("raw").textContent = Object.keys(r).length ? JSON.stringify(r, null, 2) : "";
 }
@@ -223,7 +223,7 @@ function kv(obj) {
   if (!obj || typeof obj !== "object") return esc(obj);
   return `<div class="kv">${Object.entries(obj).map(([k, v]) => `<b>${esc(k)}</b><span>${esc(pretty(v))}</span>`).join("")}</div>`;
 }
-function details(r) {
+function details(r, brick) {
   let h = "";
   if (r.find && r.proved) h += `<div class="limit"><span class="muted">${r.find === "largest" ? "Largest" : "Smallest"} ${esc(r.quantity)} that works</span>
       <b>${esc(pretty(r.proved))} ${esc(r.unit || "")}</b><span class="muted">${esc(r.proved_means || "")}</span>
@@ -234,7 +234,17 @@ function details(r) {
       e.error ? `<p class="muted">${esc(t)}: ${esc(e.error)}</p>` :
       `<div class="limit"><span class="muted">${esc(t)} over every tolerance</span><b>${esc(fmt(e.min && e.min.approx))} … ${esc(fmt(e.max && e.max.approx))}</b>
         <span class="muted">min at ${esc(pts(e.min && e.min.at))}</span><span class="muted">max at ${esc(pts(e.max && e.max.at))}</span></div>`).join("");
-  if (r.guaranteed) h += `<h3 style="margin-top:10px">Proved to stay within</h3>${kv(r.guaranteed)}` +
+  // what was checked: the requirements as the stand got them — the person sees how the model read the question
+  const reqs = (brick && brick.requirements) || [];
+  const Qs = (brick && brick.quantities) || {};
+  if (reqs.length) h = `<h3>What was checked</h3>` + reqs.map((q) => {
+    const unit = (Qs[q.quantity] && Qs[q.quantity].unit) || "";
+    const val = Array.isArray(q.value) ? `${q.value[0]} … ${q.value[1]}` : q.value;
+    return `<div class="req"><b>${esc(q.quantity)}</b> ${esc(q.op)} ${esc(val)} ${esc(unit)}${q.why ? `<span class="muted"> — ${esc(q.why)}</span>` : ""}</div>`;
+  }).join("") + h;
+  const gu = r.guaranteed_unit || {};
+  const withUnit = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k + (gu[k] || (Qs[k] && Qs[k].unit) ? ` (${gu[k] || Qs[k].unit})` : ""), v]));
+  if (r.guaranteed) h += `<h3 style="margin-top:10px">Proved to stay within</h3>${kv(withUnit(r.guaranteed))}` +
       (r.how ? `<p class="muted" style="font-size:12px">${Object.entries(r.how).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join("<br>")}</p>` : "");
   if (r.limit) h += `<h3 style="margin-top:10px">Limit</h3>${kv(r.limit)}`;
   if (r.closest_design) h += `<h3 style="margin-top:10px">Closest design</h3>${kv(r.closest_design)}`;

@@ -175,3 +175,4 @@ h3.row { display: flex; justify-content: space-between; align-items: center; }
 .src.you { background: var(--earned-soft); color: var(--earned); }
 table.vals input.changed { border-color: var(--credit); box-shadow: 0 0 0 3px var(--credit-soft); }
 .verdict .note { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 6px; margin-top: 4px; }
+.req { font-size: 13px; padding: 6px 10px; border-radius: 8px; background: var(--bg); margin: 4px 0; }

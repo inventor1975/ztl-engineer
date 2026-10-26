@@ -415,6 +415,7 @@ class Session:
         keep = ("verdict", "why", "design", "guaranteed", "objective", "how", "rests_on", "minimal_conflicts",
                 "closest_design", "its_violating_point", "value_there", "overshoot", "reasons", "fails", "limit",
                 "find", "decision", "designs_count", "designs_tried", "designs_total", "quantity", "unit", "exact_range",
+                "guaranteed_unit",
                 "proved", "proved_means", "beyond", "beyond_is", "precision")
         return {"id": self.id, "preset": self.preset["id"], "history": self.history, "question": self.question,
                 "files": [{k: f.get(k) for k in ("name", "kind", "size", "msg")} for f in self.files],
