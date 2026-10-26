@@ -135,21 +135,31 @@ function render(s) {
   $("raw").textContent = Object.keys(r).length ? JSON.stringify(r, null, 2) : "";
 }
 
+// the stand writes exact fractions with an approximation: "324139…/144115… (~2.24917)" — people read the ≈ value
+function pretty(v) {
+  if (Array.isArray(v)) return v.map(pretty).join(" … ");
+  if (v && typeof v === "object") return JSON.stringify(v);
+  const s = String(v ?? "");
+  const m = s.match(/\(~([^)\s]+)\)/) || s.match(/^~(\S+)/);
+  return m ? "≈ " + m[1] : s;
+}
 function kv(obj) {
   if (!obj || typeof obj !== "object") return esc(obj);
-  return `<div class="kv">${Object.entries(obj).map(([k, v]) => `<b>${esc(k)}</b><span>${esc(Array.isArray(v) ? v.join(" … ") : typeof v === "object" ? JSON.stringify(v) : v)}</span>`).join("")}</div>`;
+  return `<div class="kv">${Object.entries(obj).map(([k, v]) => `<b>${esc(k)}</b><span>${esc(pretty(v))}</span>`).join("")}</div>`;
 }
 function details(r) {
   let h = "";
   if (r.find && r.proved) h += `<div class="limit"><span class="muted">${r.find === "largest" ? "Largest" : "Smallest"} ${esc(r.quantity)} that works</span>
-      <b>${esc(r.proved)} ${esc(r.unit || "")}</b><span class="muted">${esc(r.proved_means || "")}</span>
+      <b>${esc(pretty(r.proved))} ${esc(r.unit || "")}</b><span class="muted">${esc(r.proved_means || "")}</span>
       ${r.beyond_is ? `<span class="muted">Just past it: ${esc(r.beyond_is)}</span>` : ""}</div>`;
   if (r.why) h += `<p class="muted" style="font-size:13px">${esc(r.why)}</p>`;
   if (r.design) h += `<h3 style="margin-top:10px">Design</h3>${kv(r.design)}`;
   if (r.guaranteed) h += `<h3 style="margin-top:10px">Guaranteed ranges</h3>${kv(r.guaranteed)}`;
   if (r.limit) h += `<h3 style="margin-top:10px">Limit</h3>${kv(r.limit)}`;
   if (r.closest_design) h += `<h3 style="margin-top:10px">Closest design</h3>${kv(r.closest_design)}`;
-  if (r.its_violating_point) h += `<h3 style="margin-top:10px">Where it fails</h3>${kv(r.its_violating_point)}`;
+  if (r.its_violating_point && Object.keys(r.its_violating_point).length) h += `<h3 style="margin-top:10px">Where it fails</h3>${kv(r.its_violating_point)}`;
+  if (r.value_there) h += `<h3 style="margin-top:10px">Value there</h3>${kv(r.value_there)}`;
+  if (r.overshoot) h += `<p class="muted" style="font-size:13px">Misses the requirement by ${esc(pretty(r.overshoot))}</p>`;
   if (r.minimal_conflicts && r.minimal_conflicts.sets) h += `<h3 style="margin-top:10px">Requirements that cannot hold together</h3>` +
     r.minimal_conflicts.sets.map((s) => `<div class="conflict">${s.map(esc).join(" + ")}</div>`).join("");
   return h;
