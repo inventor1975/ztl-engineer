@@ -18,13 +18,13 @@ TAIL = 0.8            # and the scene runs this long after the narration ends
 
 # the wait to compress in each scene: (from event, to event, how many seconds it should last on screen)
 WAITS = {"pump": ("sent", "verdict", 4.0), "published": ("sent", "verdict", 3.0), "heavy": ("sent", "verdict", 4.0),
-         "muhanna": ("sent", "verdict", 3.0), "borehole": ("sent", "verdict", 4.0), "borehole2": ("sent", "verdict", 3.0)}
+         "muhanna": ("sent", "verdict", 3.0), "clinic": ("sent", "verdict", 3.0), "borehole": ("sent", "verdict", 4.0), "borehole2": ("sent", "verdict", 3.0)}
 # the montage scenes start when the example is already in the box (the task picking is shown once, in the main case)
-START = {"published": "example in", "heavy": "example in", "muhanna": "example in"}
+START = {"published": "example in", "heavy": "example in", "muhanna": "example in", "clinic": "task picked"}
 CARDS = ("title", "problem", "options", "end")
 # montage scenes are cut from the front to their narration's length: the end (the result on screen) is what stays
-FIT_TO_VOICE = ("published", "heavy", "muhanna")
-ORDER = ["problem", "options", "borehole", "borehole2", "published", "heavy", "muhanna", "reproduce", "end"]
+FIT_TO_VOICE = ("published", "heavy", "muhanna", "clinic")
+ORDER = ["problem", "options", "borehole", "borehole2", "clinic", "published", "muhanna", "reproduce", "end"]
 
 
 def run(args):

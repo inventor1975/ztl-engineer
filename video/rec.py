@@ -263,6 +263,23 @@ def scene_heavy(r: Rec):
     r.mark("end")
 
 
+def scene_clinic(r: Rec):
+    """a rural clinic's solar kit: the cheapest panel array + battery from a seller's price list, proved"""
+    r.mark("start")
+    r.wait(1.0)
+    _pick_and_send(r, "clinic", 600)
+    r.wait(0.8)
+    r.scroll_to("#verdict")
+    r.move("#verdict")
+    r.wait(2.0)
+    r.scroll_to("#detailsCard", block="start")
+    r.move("#details .limit")
+    r.wait(2.5)
+    r.move("#details .kv")
+    r.wait(2.5)
+    r.mark("end")
+
+
 def scene_muhanna(r: Rec):
     """Muhanna's interval-FEM benchmark: the proved range of the top corner over 2^101 tolerance corners"""
     r.mark("start")
@@ -344,7 +361,7 @@ const t = setInterval(() => { document.getElementById('cmd').textContent = cmd.s
 </script></body></html>"""
 
 
-SCENES = {"borehole": scene_borehole, "borehole2": scene_borehole2, "pump": scene_pump, "fix": scene_fix, "published": scene_published, "heavy": scene_heavy, "muhanna": scene_muhanna,
+SCENES = {"borehole": scene_borehole, "borehole2": scene_borehole2, "pump": scene_pump, "fix": scene_fix, "published": scene_published, "heavy": scene_heavy, "muhanna": scene_muhanna, "clinic": scene_clinic,
           "reproduce": scene_reproduce}
 
 

@@ -28,6 +28,17 @@ PRESETS = [
              "the resting water level (8 m³ in 5 sun hours at about 30 m); a second plate, SP-750, is in the demo "
              "folder to compare.",
      "inputs": ["photo", "pdf"]},
+    {"id": "clinic", "title": "Clinic solar kit — the cheapest that keeps the vaccine fridge on", "icon": "🏥",
+     "say": "Say what the clinic must power each day (the vaccine fridge, the lights), how many cloudy days in a row it "
+            "must ride through, and the sun hours; ask for the cheapest panel array + battery from the seller's list.",
+     "give": "A photo of the seller's price list (panels and batteries with prices).",
+     "example": "Our rural clinic runs a vaccine fridge (1.2 kWh a day) and lights (0.5 kWh a day). Which panel array and "
+                "battery from this price list is the cheapest pair that keeps them running through two cloudy days in "
+                "a row? Sun: 4.5 to 6 hours a day; system losses 15 to 25 %.",
+     "demo": ["pricelist-solar-kits.png"],
+     "note": "Illustrative case with a demo price list (16 pairs). The stand checks every pair over every tolerance and "
+             "proves which one is the cheapest that holds.",
+     "inputs": ["photo", "pdf"]},
     {"id": "pump", "title": "Water pump — will it deliver?", "icon": "💧",
      "say": "Say what the pump must do (flow, lift height, pipe length and diameter) and ask whether this pump "
             "does it — or ask what head the pump needs.",
