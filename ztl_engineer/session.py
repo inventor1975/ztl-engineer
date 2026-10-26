@@ -229,6 +229,7 @@ class Session:
         # a new question starts with a clean panel: the previous answer stays in self.runs, not on screen as if
         # it were this question's
         self.result = self.warranty = self.brick = None
+        self._cad = None
         self.values, self.question = [], ""
         self.job["phase"] = "reading"
         files = self.active
@@ -287,7 +288,11 @@ class Session:
                 bom_path = tf.name
             self._log(f"the stand imports {net[-1]['name']}" + (f" with {bom[-1]['name']}" if bom else ""))
             table = SPICE.read_bom(bom_path) if bom_path else None
-            br = SPICE.to_brick(net[-1]["data"].decode("utf-8", "replace"), table, d.get("requirements") or [])
+            text = net[-1]["data"].decode("utf-8", "replace")
+            br = SPICE.to_brick(text, table, d.get("requirements") or [])
+            # what the requirements bound, for the exact worst case afterwards: "V(adc) within 3.2 3.6" -> V(adc)
+            self._cad = {"kind": "spice", "text": text, "bom": table,
+                         "targets": [str(r).split()[0] for r in d.get("requirements") or [] if str(r).strip()]}
             return {k: v for k, v in br.items() if not k.startswith("_")}
         deck = [f for f in self.active if f["kind"] == "deck"][-1]
         self._log(f"the stand imports the truss deck {deck['name']}")
@@ -330,10 +335,32 @@ class Session:
                     res = first
             else:
                 self._log("the rewrite changed the data — rejected")
+        if res.get("verdict") in ("EARNED", "REFUTED") and getattr(self, "_cad", None):
+            self._exact_ranges(res)
         self.result = res
         self.warranty = warranty.judge(res.get("verdict", ""), self.values)
         self._log(f"verdict: {res.get('verdict')}; warranty: {self.warranty['status']}")
         self._record_run()
+
+    def _exact_ranges(self, res):
+        """An EARNED verdict proves each bounded quantity stays INSIDE its window — when the proof is a certificate,
+        the stand reports the window itself as the guaranteed range (measured 26.10: V(adc) 'guaranteed' 3.2..3.6,
+        the requirement verbatim). The stand can also find the exact worst case, each end attained at a named point
+        (ustand.spice.range_of): the person wants that number, so it is computed and shown beside the verdict."""
+        cad, out = self._cad, {}
+        self.job["phase"] = "proving"
+        for t in cad.get("targets", [])[:4]:
+            self._log(f"the stand finds the exact worst case of {t}")
+            try:
+                with runner._RUN_LOCK:
+                    r = SPICE.range_of(cad["text"], cad["bom"], t)
+                out[t] = {side: {"value": r[side].get("proved"), "approx": r[side].get("proved_approx"),
+                                 "at": r[side].get("attained_at"), "exact": r[side].get("exact")}
+                          for side in ("min", "max") if isinstance(r.get(side), dict)}
+            except Exception as e:      # noqa: BLE001 — a missing extra is said, the verdict stands
+                out[t] = {"error": f"{type(e).__name__}: {e}"}
+        if out:
+            res["exact_range"] = out
 
     def _same_data(self, new: dict) -> bool:
         """A rewrite may change laws and derived names, never a given's value, tolerance or range."""
@@ -361,7 +388,7 @@ class Session:
         r = self.result or {}
         keep = ("verdict", "why", "design", "guaranteed", "objective", "how", "rests_on", "minimal_conflicts",
                 "closest_design", "its_violating_point", "value_there", "overshoot", "reasons", "fails", "limit",
-                "find", "decision", "designs_count", "designs_tried", "designs_total", "quantity", "unit",
+                "find", "decision", "designs_count", "designs_tried", "designs_total", "quantity", "unit", "exact_range",
                 "proved", "proved_means", "beyond", "beyond_is", "precision")
         return {"id": self.id, "preset": self.preset["id"], "history": self.history, "question": self.question,
                 "files": [{k: f.get(k) for k in ("name", "kind", "size", "msg")} for f in self.files],

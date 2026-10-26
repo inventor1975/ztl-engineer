@@ -189,6 +189,8 @@ function pretty(v) {
   const m = s.match(/\(~([^)\s]+)\)/) || s.match(/^~(\S+)/);
   return m ? "≈ " + m[1] : s;
 }
+const fmt = (x) => (typeof x === "number" ? (Math.abs(x) >= 1000 || Math.abs(x) < 0.01 ? x.toPrecision(5) : x.toFixed(4).replace(/0+$/, "").replace(/\.$/, "")) : String(x ?? "—"));
+const pts = (at) => at ? Object.entries(at).map(([k, v]) => `${k}=${pretty(v)}`).join(", ") : "—";
 function chipClass(st) {
   return st === "EARNED" ? "EARNED" : st === "REFUTED" ? "REFUTED" : String(st).includes("CREDIT") ? "CREDIT" : "OPEN";
 }
@@ -207,8 +209,13 @@ function details(r) {
       <b>${esc(pretty(r.proved))} ${esc(r.unit || "")}</b><span class="muted">${esc(r.proved_means || "")}</span>
       ${r.beyond_is ? `<span class="muted">Just past it: ${esc(r.beyond_is)}</span>` : ""}</div>`;
   if (r.why) h += `<p class="muted" style="font-size:13px">${esc(r.why)}</p>`;
-  if (r.design) h += `<h3 style="margin-top:10px">Design</h3>${kv(r.design)}`;
-  if (r.guaranteed) h += `<h3 style="margin-top:10px">Guaranteed ranges</h3>${kv(r.guaranteed)}`;
+  if (r.design && Object.keys(r.design).length) h += `<h3 style="margin-top:10px">Chosen design</h3>${kv(r.design)}`;
+  if (r.exact_range) h += `<h3 style="margin-top:10px">Exact worst case</h3>` + Object.entries(r.exact_range).map(([t, e]) =>
+      e.error ? `<p class="muted">${esc(t)}: ${esc(e.error)}</p>` :
+      `<div class="limit"><span class="muted">${esc(t)} over every tolerance</span><b>${esc(fmt(e.min && e.min.approx))} … ${esc(fmt(e.max && e.max.approx))}</b>
+        <span class="muted">min at ${esc(pts(e.min && e.min.at))}</span><span class="muted">max at ${esc(pts(e.max && e.max.at))}</span></div>`).join("");
+  if (r.guaranteed) h += `<h3 style="margin-top:10px">Proved to stay within</h3>${kv(r.guaranteed)}` +
+      (r.how ? `<p class="muted" style="font-size:12px">${Object.entries(r.how).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join("<br>")}</p>` : "");
   if (r.limit) h += `<h3 style="margin-top:10px">Limit</h3>${kv(r.limit)}`;
   if (r.closest_design) h += `<h3 style="margin-top:10px">Closest design</h3>${kv(r.closest_design)}`;
   if (r.its_violating_point && Object.keys(r.its_violating_point).length) h += `<h3 style="margin-top:10px">Where it fails</h3>${kv(r.its_violating_point)}`;
