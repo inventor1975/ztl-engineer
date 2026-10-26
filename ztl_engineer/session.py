@@ -402,7 +402,8 @@ class Session:
         jid = runner.start(brick)
         while True:
             s = runner.status(jid)
-            self.job.update(tried=s["tried"], total=s["total"], percent=s["percent"], stand_elapsed=s["elapsed"])
+            self.job.update(tried=s["tried"], total=s["total"], percent=s["percent"], stand_elapsed=s["elapsed"],
+                            note=s.get("note", ""))
             self.job["elapsed"] = round(time.time() - self.job["t0"], 1)
             if s["state"] == "done":
                 return runner.JOBS[jid]["result"] or {"verdict": "STAND ERROR", "why": "no result"}

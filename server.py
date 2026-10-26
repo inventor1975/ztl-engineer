@@ -56,6 +56,14 @@ class H(BaseHTTPRequestHandler):
             if WEB.resolve() in f.parents and f.is_file():
                 return self._file(f)
             return self._send(404, {"error": "not found"})
+        if p.startswith("/demo/stand:"):
+            # a demo file that lives in the ztl-stand dependency (its examples), served from there, not copied
+            from ztl_engineer.runner import STAND_DIR
+            rel = p[len("/demo/stand:"):]
+            f = (STAND_DIR / rel).resolve()
+            if (STAND_DIR / "examples").resolve() in f.parents and f.is_file():
+                return self._file(f)
+            return self._send(404, {"error": "not found"})
         if p.startswith("/demo/"):
             f = (HERE / "demo" / p[len("/demo/"):]).resolve()
             if (HERE / "demo").resolve() in f.parents and f.is_file():

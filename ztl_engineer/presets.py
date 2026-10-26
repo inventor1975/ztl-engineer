@@ -155,6 +155,27 @@ PRESETS += [
      "inputs": ["pdf"]},
 ]
 
+# A heavy run, at the bottom: the stand's own bridge-girder brick (ztl-stand examples/bridge, a pre-existing
+# measurement — 755 s on 16 workers, 2026-10-20). It is served from the ztl-stand dependency, not copied here.
+PRESETS += [
+    {"id": "heavy-bridge", "group": "Heavy — takes minutes", "icon": "🏗️",
+     "title": "Bridge girder — 32 768 designs (about 15 min, many cores)",
+     "say": "A ready problem for the stand: a 36 m Pratt truss girder, 45 bars, 11 deck loads each ±10 %, every "
+            "bar's modulus ±0.5 %, five groups of steel sections from a catalogue of 8. Find the lightest design "
+            "that meets every stress, buckling and deflection requirement — proved over all tolerances.",
+     "give": "Nothing: the example brings the stand's brick file. It runs on several CPU cores; expect minutes.",
+     "example": "Find the lightest design of this bridge girder that meets every requirement over all tolerances.",
+     "demo": ["stand:examples/bridge/pratt36.json"],
+     "note": "Heavy: about 15 minutes with 16 cores (8^5 = 32 768 designs, 91 requirements). The progress bar shows "
+             "the stand's own count of designs decided.",
+     "inputs": ["brick"]},
+]
+
+# the drop-down's groups: "Any" stays first and alone; the simple tasks in their own group (curator, 26.10)
+for _p in PRESETS:
+    if _p["id"] != "any" and not _p.get("group"):
+        _p["group"] = "Simple tasks"
+
 
 def by_id(pid: str) -> dict:
     for p in PRESETS:

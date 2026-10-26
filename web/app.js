@@ -14,14 +14,16 @@ async function api(path, body) {
 function showHint(p) {
   $("hint").innerHTML = `<div class="icon">${p.icon}</div>
     <dl><dt>Tell the AI</dt><dd>${esc(p.say)}</dd><dt>Give it</dt><dd>${esc(p.give)}</dd>
+    ${p.note ? `<dt>Note</dt><dd><b>${esc(p.note)}</b></dd>` : ""}
     ${p.source ? `<dt>Source</dt><dd><a href="${esc(p.source)}" target="_blank" rel="noopener">${esc(p.source)}</a></dd>` : ""}</dl>
     <div class="example"><b>Example</b><br>${esc(p.example)}<br><button class="ghost small" id="useEx">Use this example${p.demo ? " (with demo file" + (p.demo.length > 1 ? "s" : "") + ")" : ""}</button></div>`;
   $("useEx").onclick = async () => {
     $("text").value = p.example;
     // the example's own demo files (a nameplate, a netlist + BOM, a deck) go into the session with it
-    for (const name of p.demo || []) {
-      if (S.files.some((f) => f.name === name)) continue;
-      const blob = await (await fetch(`/demo/${name}`)).blob();
+    for (const src of p.demo || []) {
+      const name = src.split("/").pop();
+      if (S.files.some((f) => f.name === name && (f.msg === null || f.msg === undefined))) continue;
+      const blob = await (await fetch(`/demo/${src}`)).blob();
       const b64 = await new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(blob); });
       await api(`/api/session/${S.id}/file`, { name, mime: blob.type, b64 });
     }
@@ -127,7 +129,7 @@ function render(s0) {
   const bar = $("bar");
   if (j.phase === "proving" && j.total) {
     bar.classList.remove("indet"); bar.firstElementChild.style.width = `${Math.min(100, j.percent || 0)}%`;
-    $("pcount").textContent = `${j.tried} of ${j.total} designs · ${j.elapsed}s`;
+    $("pcount").textContent = `${j.tried} of ${j.total} designs · ${fmtTime(j.stand_elapsed || j.elapsed)}${j.note ? " · " + j.note : ""}`;
   } else if (running) {
     bar.classList.add("indet"); $("pcount").textContent = `${j.elapsed || 0}s`;
   } else {
@@ -246,6 +248,7 @@ function choice(d) {
   }
   return [item, parts.join(", "), cat ? `(${cat})` : ""].filter(Boolean).join(" ");
 }
+const fmtTime = (s) => (s >= 60 ? `${Math.floor(s / 60)} min ${Math.round(s % 60)} s` : `${s || 0} s`);
 function chipClass(st) {
   return st === "EARNED" || st === "FOUND" ? "EARNED" : st === "REFUTED" ? "REFUTED" : String(st).includes("CREDIT") ? "CREDIT" : "OPEN";
 }

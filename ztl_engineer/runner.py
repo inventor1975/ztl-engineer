@@ -60,13 +60,80 @@ def _work(job, brick):
             job["state"] = "done"
 
 
+HEAVY_DESIGNS = int(os.environ.get("ZTL_ENGINEER_HEAVY", "2000"))
+HEAVY_JOBS = int(os.environ.get("ZTL_ENGINEER_JOBS", str(max(1, min(16, (os.cpu_count() or 2) - 4)))))
+HEAVY_LIMIT_S = int(os.environ.get("ZTL_ENGINEER_HEAVY_LIMIT", "1800"))
+
+
+def designs(brick: dict) -> int:
+    """How many designs the stand may have to judge: the product, over the slots, of the catalogue items each may
+    take. Above HEAVY_DESIGNS the run goes to a separate process with several workers (the stand's --jobs)."""
+    n = 1
+    cat = brick.get("catalog") or {}
+    for slot in (brick.get("slots") or {}).values():
+        k = sum(len((cat.get(c) or {}).get("items") or []) for c in (slot.get("from") or []))
+        n *= max(1, k)
+    return n
+
+
+def _work_heavy(job, brick):
+    """A heavy brick runs as `python3 -m ustand.stand brick.json --jobs N` in its own process: the stand's worker pool
+    forks, which is unsafe inside this threaded web server. Progress comes from the stand's own stderr line,
+    "[stand] tried/total designs, N s: ..." (printed every 30 s); the verdict from its stdout. At the time limit the
+    process gets SIGTERM — the stand stops at a safe point and still prints an honest partial report."""
+    import json as _json
+    import re as _re
+    import signal as _signal
+    import subprocess as _sp
+    import tempfile as _tf
+    with _RUN_LOCK:
+        job["t0"] = time.time()
+        job["state"] = "running"
+        job["total"] = designs(brick)
+        job["note"] = f"heavy: {job['total']} designs, {HEAVY_JOBS} workers"
+        with _tf.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+            _json.dump(brick, f)
+            path = f.name
+        proc = _sp.Popen([sys.executable, "-m", "ustand.stand", path, "--jobs", str(HEAVY_JOBS)], cwd=str(STAND_DIR),
+                         stdout=_sp.PIPE, stderr=_sp.PIPE, text=True,
+                         env=dict(os.environ, PYTHONPATH=str(STAND_DIR)))
+        out = []
+
+        def read_err():
+            for line in proc.stderr:
+                m = _re.search(r"\[stand\] (\d+)/(\d+) designs", line)
+                if m:
+                    job["tried"], job["total"] = int(m.group(1)), int(m.group(2))
+
+        def read_out():
+            out.append(proc.stdout.read())
+
+        threading.Thread(target=read_err, daemon=True).start()
+        t_out = threading.Thread(target=read_out, daemon=True)
+        t_out.start()
+        while proc.poll() is None:
+            job["elapsed"] = round(time.time() - job["t0"], 1)
+            if job["elapsed"] > HEAVY_LIMIT_S and not job.get("stopping"):
+                job["stopping"] = True
+                job["note"] += f"; stopped at the {HEAVY_LIMIT_S} s limit"
+                proc.send_signal(_signal.SIGTERM)
+            time.sleep(0.5)
+        t_out.join(timeout=10)
+        try:
+            job["result"] = _json.loads("".join(out) or "{}")
+        except ValueError:
+            job["result"] = {"verdict": "STAND ERROR", "why": "the stand's output was not JSON: " + "".join(out)[-500:]}
+        job["elapsed"] = round(time.time() - job["t0"], 1)
+        job["state"] = "done"
+
+
 def start(brick: dict, on_done=None) -> str:
     jid = uuid.uuid4().hex[:12]
     job = {"id": jid, "state": "queued", "tried": 0, "total": 0, "elapsed": 0.0, "t0": time.time(),
            "result": None, "note": "", "on_done": on_done}
 
     def go():
-        _work(job, brick)
+        (_work_heavy if designs(brick) > HEAVY_DESIGNS else _work)(job, brick)
         if on_done:
             try:
                 on_done(job)
@@ -89,4 +156,6 @@ def status(jid: str) -> dict | None:
     if not j:
         return None
     pct = round(100 * j["tried"] / j["total"], 1) if j["total"] else None
+    if j["state"] == "running" and j.get("t0"):
+        j["elapsed"] = round(time.time() - j["t0"], 1)
     return {k: j[k] for k in ("id", "state", "tried", "total", "elapsed", "note")} | {"percent": pct}
