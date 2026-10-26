@@ -133,7 +133,14 @@ class Session:
                 self._log("the model needs more information")
                 return
             if d.get("road") == "cad":
-                self.brick, self.values = self._from_cad(d), []
+                try:
+                    self.brick, self.values = self._from_cad(d), []
+                except Exception as e:          # noqa: BLE001 — an importer's refusal is the file's fault, said as such
+                    self.history.append({"role": "assistant", "text": reply})
+                    self.result = {"verdict": "BRICK ERROR", "why": f"the file could not be imported: {e}"}
+                    self.warranty = warranty.judge("BRICK ERROR", [])
+                    self._log(f"import refused: {e}")
+                    return
             else:
                 self.brick = d.get("brick")
                 target = ((self.brick or {}).get("find") or {})
@@ -161,7 +168,9 @@ class Session:
                 tf.write(bom[-1]["data"]); tf.close()
                 bom_path = tf.name
             self._log(f"the stand imports {net[-1]['name']}" + (f" with {bom[-1]['name']}" if bom else ""))
-            return SPICE.to_brick(net[-1]["data"].decode("utf-8", "replace"), bom_path, d.get("requirements") or [])
+            table = SPICE.read_bom(bom_path) if bom_path else None
+            br = SPICE.to_brick(net[-1]["data"].decode("utf-8", "replace"), table, d.get("requirements") or [])
+            return {k: v for k, v in br.items() if not k.startswith("_")}
         deck = [f for f in self.files if f["kind"] == "deck"][-1]
         self._log(f"the stand imports the truss deck {deck['name']}")
         reqs = [tuple(r) for r in d.get("requirements") or []]

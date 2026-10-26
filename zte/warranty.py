@@ -8,9 +8,9 @@ Values from the person's own CAD files are their own data and enter clean.
 
 The warranty is then a ZTL claim, evaluated by ZTL's own evaluator (a pre-existing dependency):
 
-    earned  =  stand_holds  AND  v1  AND  v2  AND ...
+    earned  =  stand  AND  v1  AND  v2  AND ...
 
-with stand_holds = T for EARNED (F for REFUTED). Zero trust: one dirty value and the conjunction is F — the claim
+with stand = T when the stand's verdict (EARNED, or REFUTED with its witness) is proved. Zero trust: one dirty value and the conjunction is F — the claim
 is not earned, whatever the stand said — and the page names the dirty values it rests on.
 """
 from __future__ import annotations
@@ -32,8 +32,10 @@ def judge(verdict: str, values: list[dict]) -> dict:
     dirty = [v["quantity"] for v in values if not v.get("confirmed") and v.get("from") not in ("file",)]
     env, atoms = {}, []
     if verdict in ("EARNED", "REFUTED"):
+        # `stand` = "the stand's verdict, as stated, is proved" — T for a proof that the design holds AND for a
+        # proof that it fails (each with its witness); what is then at stake is only the data under it
         env["stand"] = "T"
-        atoms.append("stand" if verdict == "EARNED" else ("not", "stand"))
+        atoms.append("stand")
     else:
         return {"status": verdict, "dirty": dirty,
                 "headline": {"OPEN": "OPEN — the stand could not decide it either way",
@@ -48,16 +50,15 @@ def judge(verdict: str, values: list[dict]) -> dict:
     value = ztl.ev(_chain(atoms), env)
     if verdict == "EARNED":
         status = "EARNED" if value == "T" else "ON CREDIT"
-        headline = ("Proved: the design holds for every value the tolerances allow — on data a person confirmed"
+        headline = ("Proved: the design holds for every value the tolerances allow — on data you gave in your own files or confirmed"
                     if value == "T" else
                     f"Holds for the values as read — but {len(dirty)} of them are still dirty (read by the model, "
                     "not yet confirmed). Confirm them to earn the result.")
     else:
         status = "REFUTED" if value == "T" else "REFUTED ON CREDIT"
-        headline = ("Refuted: the design fails at a concrete point — on data a person confirmed"
+        headline = ("Refuted: the design fails at a concrete point — on data you gave in your own files or confirmed"
                     if value == "T" else
                     f"Fails for the values as read — but {len(dirty)} of them are dirty. A misread value can "
                     "change this; confirm or correct them.")
     return {"status": status, "ztl_value": value, "dirty": dirty, "headline": headline,
-            "formula": " AND ".join(["stand" if verdict == "EARNED" else "NOT stand"]
-                                    + [v["quantity"] for v in values])}
+            "formula": " AND ".join([f"stand({verdict})"] + [v["quantity"] for v in values])}
