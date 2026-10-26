@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Zero-Trust Engineer — the web app. Standard library only.
+"""ZTL Engineer — the web app. Standard library only.
 
     python3 server.py [--port 8090]     then open http://localhost:8090
 
@@ -25,7 +25,7 @@ MAX_BODY = 40 * 1024 * 1024
 
 
 class H(BaseHTTPRequestHandler):
-    server_version = "ZeroTrustEngineer/0.1"
+    server_version = "ZTLEngineer/0.1"
 
     def log_message(self, fmt, *a):
         sys.stderr.write("[web] " + fmt % a + "\n")
@@ -54,6 +54,11 @@ class H(BaseHTTPRequestHandler):
         if p.startswith("/static/"):
             f = (WEB / p[len("/static/"):]).resolve()
             if WEB.resolve() in f.parents and f.is_file():
+                return self._file(f)
+            return self._send(404, {"error": "not found"})
+        if p.startswith("/demo/"):
+            f = (HERE / "demo" / p[len("/demo/"):]).resolve()
+            if (HERE / "demo").resolve() in f.parents and f.is_file():
                 return self._file(f)
             return self._send(404, {"error": "not found"})
         if p == "/api/presets":
@@ -108,7 +113,7 @@ def main():
         port = int(sys.argv[sys.argv.index("--port") + 1])
     srv = ThreadingHTTPServer(("127.0.0.1", port), H)
     srv.allow_reuse_address = True
-    print(f"Zero-Trust Engineer on http://localhost:{port}  (spent ${meta.spent()['usd']:.2f} of ${meta.CAP_USD:.0f})")
+    print(f"ZTL Engineer on http://localhost:{port}  (spent ${meta.spent()['usd']:.2f} of ${meta.CAP_USD:.0f})")
     srv.serve_forever()
 
 

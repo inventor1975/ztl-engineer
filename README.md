@@ -1,4 +1,4 @@
-# Zero-Trust Engineer
+# ZTL Engineer
 
 An engineering design stand for people: describe what you need in plain words, drop in a photo of a nameplate, a
 datasheet PDF or your CAD export, and get a **proved** answer — the design works for every value the tolerances

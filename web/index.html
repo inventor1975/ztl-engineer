@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Zero-Trust Engineer</title>
+<title>ZTL Engineer</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <header class="top">
-  <div class="brand"><div class="logo">Z</div>Zero-Trust Engineer <small>Muse Spark reads · ZTL proves</small></div>
+  <div class="brand"><div class="logo">Z</div>ZTL Engineer <small>Muse Spark reads · ZTL proves</small></div>
   <nav class="links">
     <a href="/" class="on">Stand</a>
     <a href="/help">Help</a>
@@ -24,13 +24,6 @@
       <select id="preset"></select>
       <div class="hint" id="hint"></div>
     </div>
-    <div class="card">
-      <h3>Files</h3>
-      <div class="drop" id="drop">Drop a nameplate photo, a datasheet PDF,<br>a SPICE netlist + BOM, or a truss deck<br>
-        <small>or click to choose</small></div>
-      <input type="file" id="picker" multiple hidden>
-      <ul class="files" id="files"></ul>
-    </div>
   </section>
 
   <!-- middle: chat -->
@@ -40,10 +33,14 @@
       <div class="empty" id="empty">Pick a task, add a photo or a document if you have one, and say what you
         need. Muse Spark turns it into a precise engineering problem; the ZTL stand proves the answer.</div>
       <div class="msgs" id="msgs"></div>
+      <ul class="chips" id="files"></ul>
       <div class="composer">
-        <textarea id="text" placeholder="What do you need? e.g. Will this pump lift 2 L/s to 20 m?"></textarea>
+        <button class="ghost attach" id="attach" title="Attach a nameplate photo, a datasheet PDF, a SPICE netlist + BOM, or a truss deck">📎</button>
+        <input type="file" id="picker" multiple hidden>
+        <textarea id="text" placeholder="What do you need? Attach a photo, a PDF or a CAD file with 📎 or drop it here."></textarea>
         <button id="send">Send</button>
       </div>
+      <div class="dropveil" id="dropveil">Drop the file here — a nameplate photo, a datasheet PDF,<br>a SPICE netlist + BOM, or a truss deck</div>
     </div>
   </section>
 

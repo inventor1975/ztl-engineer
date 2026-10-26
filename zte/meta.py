@@ -33,7 +33,7 @@ PRICES = {
 
 CAP_USD = float(os.environ.get("ZTE_SPEND_CAP_USD", "100"))
 LEDGER = pathlib.Path(os.environ.get(
-    "ZTE_LEDGER", pathlib.Path.home() / ".local" / "state" / "zero-trust-engineer" / "spend.json"))
+    "ZTE_LEDGER", pathlib.Path.home() / ".local" / "state" / "ztl-engineer" / "spend.json"))
 _LOCK = threading.Lock()
 
 

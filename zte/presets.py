@@ -12,25 +12,27 @@ PRESETS = [
             "does it — or ask what head the pump needs.",
      "give": "A photo of the pump's nameplate or its datasheet PDF with the pump curve.",
      "example": "I need to lift 2 litres per second of water 20 m up through 60 m of 50 mm steel pipe. "
-                "Will the pump on this nameplate do it? If not, what shut-off head would be enough?",
+                "Will the pump on this nameplate do it?",
+     "demo": ["nameplate-pump.png"],
      "inputs": ["photo", "pdf"]},
     {"id": "dosing", "title": "Dosing pump — chlorine or chemical feed", "icon": "🧪",
      "say": "Give the water flow, the target dose and the chemical's strength; ask whether the pump's range covers it.",
      "give": "The dosing pump's datasheet or label (its min–max output).",
-     "example": "A well delivers 30 m³/h and I need 2 mg/L of chlorine from 12.5% sodium hypochlorite. Can this "
-                "dosing pump cover it across its range?",
+     "example": "A well delivers 30 m³/h and I need 2 mg/L of chlorine from 12.5% sodium hypochlorite "
+                "(density 1.2 kg/L). My dosing pump delivers 0.2 to 6 L/h. Can it cover the dose?",
      "inputs": ["photo", "pdf"]},
     {"id": "bearing", "title": "Bearing — will it last?", "icon": "⚙️",
      "say": "Give the load, the speed and the hours it must last; ask which bearing from a list passes.",
      "give": "A bearing catalogue page or datasheet (dynamic load rating Cr).",
-     "example": "Radial load 6.5 kN at 1500 rpm, it must last 10 000 hours. Which of 6308 or 6309 is enough?",
+     "example": "Radial load 6.5 kN at 1500 rpm, it must last 10 000 hours. The catalogue gives the dynamic "
+                "load rating Cr = 40.7 kN for a 6308 and 52.7 kN for a 6309. Which is enough?",
      "inputs": ["photo", "pdf"]},
     {"id": "bolt", "title": "Bolted joint — preload with friction spread", "icon": "🔩",
      "say": "Give the bolt size and grade, the tightening torque and the friction range; ask for the guaranteed "
             "clamp force.",
      "give": "The bolt or fastener datasheet, or a handbook table.",
-     "example": "M10 8.8 bolt tightened to 45 N·m, thread friction anywhere from 0.14 to 0.24. Is a clamp force "
-                "of at least 20 kN guaranteed?",
+     "example": "M10x1.5 bolt (pitch diameter 9.026 mm, head bearing mean diameter 13 mm) tightened to 45 N·m; "
+                "thread and head friction anywhere from 0.14 to 0.24. Is a clamp force of at least 18 kN guaranteed?",
      "inputs": ["photo", "pdf"]},
     {"id": "oring", "title": "O-ring groove — squeeze and fill", "icon": "⭕",
      "say": "Give the O-ring cross-section and the groove dimensions with tolerances; ask whether squeeze and "
@@ -43,8 +45,9 @@ PRESETS = [
      "say": "Give the power dissipated, the ambient temperature and the limit; ask for the largest heatsink "
             "thermal resistance that still works.",
      "give": "The regulator or transistor datasheet (junction-to-case resistance, max junction temperature).",
-     "example": "A linear regulator drops 12 V to 5 V at 1 A, ambient up to 40 °C. What is the largest heatsink "
-                "resistance that keeps the junction under 125 °C?",
+     "example": "An LM7805 in TO-220: junction-to-case 5 °C/W, case-to-sink 0.5 °C/W (thermal pad). Input 12 V, "
+                "output 5 V, load 1 A. Ambient up to 40 °C, junction at or below 125 °C. What is the largest "
+                "heatsink resistance (sink-to-ambient) that still works?",
      "inputs": ["photo", "pdf"]},
     {"id": "regulator", "title": "Voltage regulator — divider tolerance", "icon": "🔌",
      "say": "Give the target output, the reference voltage and the resistor grades; ask whether the output stays "
@@ -56,7 +59,8 @@ PRESETS = [
     {"id": "circuit", "title": "Circuit from your CAD — SPICE + BOM", "icon": "🧩",
      "say": "Upload the SPICE netlist and the BOM, then say what must hold (a node voltage window, a power limit).",
      "give": "The netlist (.cir) your schematic tool exports and the BOM (.csv) with tolerances.",
-     "example": "V(out) must stay between 4.7 and 5.4 V and no resistor may dissipate more than 0.25 W.",
+     "example": "The ADC input V(adc) must stay between 3.2 and 3.6 V over all tolerances.",
+     "demo": ["sensor-divider.cir", "sensor-divider-bom.csv"],
      "inputs": ["netlist+bom"]},
     {"id": "adc", "title": "Amplifier + ADC error budget", "icon": "📈",
      "say": "Give the amplifier's offset and gain errors and the ADC's; ask whether the total stays within budget.",
@@ -80,7 +84,8 @@ PRESETS = [
     {"id": "tube", "title": "Tube — allowed pressure", "icon": "🧯",
      "say": "Give the tube size, wall, material and temperature; ask the allowed working pressure.",
      "give": "The tubing catalogue page or material table.",
-     "example": "1/2 inch 316 stainless tube, 0.049 inch wall, at 100 °F. What working pressure is allowed?",
+     "example": "1/2 inch OD 316 stainless tube, 0.049 inch wall (tolerance ±10%), allowable stress 16 700 psi "
+                "at 100 °F, Barlow's formula. What working pressure is guaranteed?",
      "inputs": ["photo", "pdf"]},
     {"id": "battery", "title": "Battery — how long will it last?", "icon": "🔋",
      "say": "Give the capacity, the average current and the derating factors; ask the guaranteed lifetime.",
@@ -90,13 +95,15 @@ PRESETS = [
     {"id": "motor", "title": "Motor + gearhead — conveyor sizing", "icon": "🏭",
      "say": "Give the load, the belt speed and the gear ratio options; ask which motor and ratio work.",
      "give": "The motor and gearhead datasheets.",
-     "example": "A conveyor moves 20 kg at 0.2 m/s on a 50 mm drive roller. Which of ratios 25, 50 or 100 with a "
-                "1500 rpm motor gives the speed and enough torque?",
+     "example": "A conveyor moves 20 kg at 0.2 m/s on a 50 mm diameter drive roller, friction coefficient 0.3. "
+                "The motor gives 0.4 N·m at 1500 rpm, gearhead efficiency 0.85. Which of ratios 25, 50 or 100 gives "
+                "a belt speed of 0.15–0.25 m/s and enough torque?",
      "inputs": ["pdf"]},
     {"id": "truss", "title": "Truss — deflection from an ANSYS deck", "icon": "🌉",
      "say": "Upload the plane-truss deck and say the modulus tolerance and the deflection limit.",
      "give": "An ANSYS input deck (N, E, MP EX, R, D, F lines).",
-     "example": "Modulus within ±0.5%. Node 42 must not sag more than 811 mm.",
+     "example": "Steel modulus within ±0.5%. The apex, node 6, must not sag more than 5 mm.",
+     "demo": ["roof-truss.txt"],
      "inputs": ["deck"]},
 ]
 

@@ -1,4 +1,4 @@
-// Zero-Trust Engineer — the page. No framework: one session, polled while a run is in progress.
+// ZTL Engineer — the page. No framework: one session, polled while a run is in progress.
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 let PRESETS = [], S = null, polling = null;
@@ -13,8 +13,19 @@ async function api(path, body) {
 function showHint(p) {
   $("hint").innerHTML = `<div class="icon">${p.icon}</div>
     <dl><dt>Tell the AI</dt><dd>${esc(p.say)}</dd><dt>Give it</dt><dd>${esc(p.give)}</dd></dl>
-    <div class="example"><b>Example</b><br>${esc(p.example)}<br><button class="ghost small" id="useEx">Use this example</button></div>`;
-  $("useEx").onclick = () => { $("text").value = p.example; $("text").focus(); };
+    <div class="example"><b>Example</b><br>${esc(p.example)}<br><button class="ghost small" id="useEx">Use this example${p.demo ? " (with demo file" + (p.demo.length > 1 ? "s" : "") + ")" : ""}</button></div>`;
+  $("useEx").onclick = async () => {
+    $("text").value = p.example;
+    // the example's own demo files (a nameplate, a netlist + BOM, a deck) go into the session with it
+    for (const name of p.demo || []) {
+      if (S.files.some((f) => f.name === name)) continue;
+      const blob = await (await fetch(`/demo/${name}`)).blob();
+      const b64 = await new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(blob); });
+      await api(`/api/session/${S.id}/file`, { name, mime: blob.type, b64 });
+    }
+    S = await api(`/api/session/${S.id}`); render(S);
+    $("text").focus();
+  };
 }
 
 async function init() {
@@ -32,12 +43,12 @@ async function refreshSpend() {
 }
 
 // ---------- files
-const drop = $("drop");
-drop.onclick = () => $("picker").click();
-$("picker").onchange = (e) => upload([...e.target.files]);
-drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
-drop.ondragleave = () => drop.classList.remove("over");
-drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); upload([...e.dataTransfer.files]); };
+const chat = document.querySelector(".chat");
+$("attach").onclick = () => $("picker").click();
+$("picker").onchange = (e) => { upload([...e.target.files]); e.target.value = ""; };
+chat.ondragover = (e) => { e.preventDefault(); chat.classList.add("over"); };
+chat.ondragleave = (e) => { if (!chat.contains(e.relatedTarget)) chat.classList.remove("over"); };
+chat.ondrop = (e) => { e.preventDefault(); chat.classList.remove("over"); upload([...e.dataTransfer.files]); };
 
 async function upload(files) {
   for (const f of files) {
@@ -76,7 +87,7 @@ const PHASE = { starting: "Starting…", reading: "Muse Spark is reading", provi
 
 function render(s) {
   // files
-  $("files").innerHTML = s.files.map((f) => `<li><span class="kind">${f.kind}</span>${esc(f.name)} <span class="muted">${(f.size / 1024).toFixed(0)} KB</span></li>`).join("");
+  $("files").innerHTML = s.files.map((f) => `<li title="${(f.size / 1024).toFixed(0)} KB"><span class="kind">${f.kind}</span>${esc(f.name)}</li>`).join("");
   // chat
   $("empty").hidden = s.history.length > 0;
   const msgs = s.history.map((m) => `<div class="msg ${m.role}"><span class="who">${m.role === "user" ? "You" : "Muse Spark"}</span>${esc(m.text)}</div>`).join("");

@@ -1,0 +1,26 @@
+! Demo: a small steel roof truss, 3-4-5 triangles (every bar length rational), metres and newtons
+/PREP7
+ET, 1, LINK1
+MP, EX, 1, 200000000000
+R, 1, 0.0005
+N, 1, 0, 0
+N, 2, 4, 0
+N, 3, 8, 0
+N, 4, 2, 1.5
+N, 5, 6, 1.5
+N, 6, 4, 3
+E, 1, 2
+E, 2, 3
+E, 1, 4
+E, 4, 6
+E, 6, 5
+E, 5, 3
+E, 4, 2
+E, 2, 5
+E, 2, 6
+D, 1, UX, 0
+D, 1, UY, 0
+D, 3, UY, 0
+F, 6, FY, -20000
+F, 4, FY, -10000
+F, 5, FY, -10000

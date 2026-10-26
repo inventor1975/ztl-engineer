@@ -1,0 +1,5 @@
+Reference,Value,Tolerance
+V1,5,2%
+R1,1.5k,1%
+R2,3.3k,1%
+RL,100k,20%

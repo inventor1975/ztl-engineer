@@ -1,0 +1,7 @@
+* Demo: a 5 V rail divided down for a 3.3 V ADC input, with the ADC's input resistance as a load
+V1 vcc 0 DC 5
+R1 vcc adc 1.5k
+R2 adc 0 3.3k
+RL adc 0 100k
+.op
+.end
