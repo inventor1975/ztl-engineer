@@ -70,6 +70,18 @@ class H(BaseHTTPRequestHandler):
             s = SS.get(parts[3])
             if not s:
                 return self._send(404, {"error": "no such session"})
+            if len(parts) > 5 and parts[4] == "file":
+                import urllib.parse
+                f = s.file_data(urllib.parse.unquote(parts[5]))
+                if not f:
+                    return self._send(404, {"error": "no such file"})
+                self.send_response(200)
+                self.send_header("Content-Type", f.get("mime") or "application/octet-stream")
+                self.send_header("Content-Disposition", f'attachment; filename="{f["name"]}"')
+                self.send_header("Content-Length", str(len(f["data"])))
+                self.end_headers()
+                self.wfile.write(f["data"])
+                return
             if len(parts) > 5 and parts[4] == "run" and parts[5].isdigit():
                 r = s.run_view(int(parts[5]))
                 return self._send(200, r) if r else self._send(404, {"error": "no such run"})
@@ -97,6 +109,9 @@ class H(BaseHTTPRequestHandler):
             if action == "file":
                 data = base64.b64decode(d["b64"])
                 return self._send(200, s.add_file(d["name"], d.get("mime") or "", data))
+            if action == "file_remove":
+                s.remove_pending(d["name"])
+                return self._send(200, s.view())
             if action == "message":
                 s.say(d["text"], d.get("preset"))
                 return self._send(200, s.view())

@@ -101,10 +101,17 @@ const PHASE = { starting: "Starting…", reading: "Muse Spark is reading", provi
 function render(s0) {
   let s = s0;
   // files
-  $("files").innerHTML = s.files.map((f) => `<li title="${(f.size / 1024).toFixed(0)} KB"><span class="kind">${f.kind}</span>${esc(f.name)}</li>`).join("");
+  // files waiting to be sent sit above the input; sent files live in their message, with a download link
+  $("files").innerHTML = s.files.filter((f) => f.msg === null || f.msg === undefined).map((f) =>
+    `<li title="${(f.size / 1024).toFixed(0)} KB"><span class="kind">${f.kind}</span>${esc(f.name)}
+     <button class="x" data-unattach="${esc(f.name)}" title="Remove">×</button></li>`).join("");
+  document.querySelectorAll("[data-unattach]").forEach((b) => b.onclick = async () => {
+    S = await api(`/api/session/${S.id}/file_remove`, { name: b.dataset.unattach }); render(S); });
   // chat
   $("empty").hidden = s.history.length > 0;
-  const msgs = s.history.map((m) => `<div class="msg ${m.role}"><span class="who">${m.role === "user" ? "You" : "Muse Spark"}</span>${esc(m.text)}</div>`).join("");
+  const fileLink = (n) => `<a class="att" href="/api/session/${s.id}/file/${encodeURIComponent(n)}" download>📎 ${esc(n)}</a>`;
+  const msgs = s.history.map((m) => `<div class="msg ${m.role}"><span class="who">${m.role === "user" ? "You" : "Muse Spark"}</span>${esc(m.text)}${
+    m.files && m.files.length ? `<div class="atts">${m.files.map(fileLink).join("")}</div>` : ""}</div>`).join("");
   $("msgs").innerHTML = msgs;
   $("msgs").scrollTop = $("msgs").scrollHeight;
   // progress

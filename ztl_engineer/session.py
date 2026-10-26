@@ -67,7 +67,7 @@ class Session:
         d = STORE / self.id
         (d / "files").mkdir(parents=True, exist_ok=True)
         state = {k: getattr(self, k) for k in _SAVED}
-        state["files"] = [{k: f[k] for k in ("name", "mime", "kind", "size")} for f in self.files]
+        state["files"] = [{k: f.get(k) for k in ("name", "mime", "kind", "size", "msg", "preset")} for f in self.files]
         tmp = d / "session.json.tmp"
         tmp.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
         tmp.replace(d / "session.json")
@@ -95,25 +95,61 @@ class Session:
                           # the run is labelled by what the person asked, not by the model's paraphrase
                           "question": next((m["text"] for m in reversed(self.history) if m["role"] == "user"),
                                            self.question),
-                          "files": [f["name"] for f in self.files],
+                          "files": [f["name"] for f in self.active],
                           "result": self.result, "warranty": self.warranty,
                           "values": copy.deepcopy(self.values), "brick": copy.deepcopy(self.brick)})
         self.save()
 
     # ---------- inputs
     def add_file(self, name: str, mime: str, data: bytes) -> dict:
+        """A file waits beside the input box (msg None) until the next message is sent, then belongs to it."""
         name = pathlib.Path(name).name or "file"
-        f = {"name": name, "mime": mime, "data": data, "kind": _kind(name, mime), "size": len(data)}
+        self.files = [f for f in self.files if not (f["name"] == name and f.get("msg") is None)]
+        f = {"name": name, "mime": mime, "data": data, "kind": _kind(name, mime), "size": len(data), "msg": None}
         self.files.append(f)
         (STORE / self.id / "files").mkdir(parents=True, exist_ok=True)
         (STORE / self.id / "files" / name).write_bytes(data)
         self.save()
         return {k: f[k] for k in ("name", "kind", "size")}
 
+    def remove_pending(self, name: str):
+        self.files = [f for f in self.files if not (f["name"] == name and f.get("msg") is None)]
+        self.save()
+
+    def file_data(self, name: str) -> dict | None:
+        for f in reversed(self.files):
+            if f["name"] == name:
+                return f
+        return None
+
+    @property
+    def active(self) -> list[dict]:
+        """The files the current question uses: those sent with the latest message; if it carried none, those of
+        the latest message that did — but only while the task in the list is the same. A new task does not
+        inherit another task's netlist (measured 26.10: a battery question after the circuit example was sent
+        down the circuit road with the old files)."""
+        users = [i for i, m in enumerate(self.history) if m["role"] == "user"]
+        if not users:
+            return []
+        own = [f for f in self.files if f.get("msg") == users[-1]]
+        if own:
+            return own
+        for i in reversed(users[:-1]):
+            prev = [f for f in self.files if f.get("msg") == i]
+            if prev:
+                return prev if all(f.get("preset") == self.preset["id"] for f in prev) else []
+        return []
+
     def say(self, text: str, preset_id: str | None = None):
+        if self.job["phase"] not in ("idle", "done", "error"):
+            raise RuntimeError("a run is already in progress")
         if preset_id:
             self.preset = presets.by_id(preset_id)
-        self.history.append({"role": "user", "text": text})
+        idx = len(self.history)
+        sent = [f for f in self.files if f.get("msg") is None]
+        for f in sent:
+            f["msg"], f["preset"] = idx, self.preset["id"]
+        self.history.append({"role": "user", "text": text, "files": [f["name"] for f in sent]})
         self.save()
         self._start(self._pipeline)
 
@@ -178,7 +214,8 @@ class Session:
 
     def _pipeline(self):
         self.job["phase"] = "reading"
-        bricks = [f for f in self.files if f["kind"] == "brick"]
+        files = self.active
+        bricks = [f for f in files if f["kind"] == "brick"]
         if bricks:
             import json
             self.brick = json.loads(bricks[-1]["data"])
@@ -186,9 +223,9 @@ class Session:
             self._log(f"using your brick {bricks[-1]['name']} as it is")
             reply = "I took your brick file as it is and sent it to the stand."
         else:
-            n_img = sum(f["kind"] in ("photo", "pdf") for f in self.files)
+            n_img = sum(f["kind"] in ("photo", "pdf") for f in files)
             self._log(f"Muse Spark reads the conversation and {n_img} image/PDF file(s)")
-            d = agent.build(self.history, self.files, self.preset)
+            d = agent.build(self.history, files, self.preset)
             self.usd += d.get("usd", 0)
             reply = d.get("reply", "")
             self.question = d.get("question", "") or self.question
@@ -222,9 +259,9 @@ class Session:
         self._judge_with_repair()
 
     def _from_cad(self, d) -> dict:
-        net = [f for f in self.files if f["kind"] == "netlist"]
+        net = [f for f in self.active if f["kind"] == "netlist"]
         if net:
-            bom = [f for f in self.files if f["kind"] == "bom"]
+            bom = [f for f in self.active if f["kind"] == "bom"]
             bom_path = None
             if bom:
                 import tempfile
@@ -235,7 +272,7 @@ class Session:
             table = SPICE.read_bom(bom_path) if bom_path else None
             br = SPICE.to_brick(net[-1]["data"].decode("utf-8", "replace"), table, d.get("requirements") or [])
             return {k: v for k, v in br.items() if not k.startswith("_")}
-        deck = [f for f in self.files if f["kind"] == "deck"][-1]
+        deck = [f for f in self.active if f["kind"] == "deck"][-1]
         self._log(f"the stand imports the truss deck {deck['name']}")
         reqs = [tuple(r) for r in d.get("requirements") or []]
         return TRUSS.to_brick(deck["data"].decode("utf-8", "replace"), d.get("tolerance") or "0", reqs)
@@ -280,7 +317,7 @@ class Session:
                 "find", "decision", "designs_count", "designs_tried", "designs_total", "quantity", "unit",
                 "proved", "proved_means", "beyond", "beyond_is", "precision")
         return {"id": self.id, "preset": self.preset["id"], "history": self.history, "question": self.question,
-                "files": [{k: f[k] for k in ("name", "kind", "size")} for f in self.files],
+                "files": [{k: f.get(k) for k in ("name", "kind", "size", "msg")} for f in self.files],
                 "values": self.values, "warranty": self.warranty, "job": {k: v for k, v in self.job.items()
                                                                           if k != "trace"},
                 "result": {k: r[k] for k in keep if k in r}, "brick": self.brick, "usd": round(self.usd, 4),

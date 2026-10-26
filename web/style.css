@@ -160,3 +160,11 @@ h3.row { display: flex; justify-content: space-between; align-items: center; }
 .runs .rs.CREDIT { background: var(--credit); } .runs .rs.OPEN { background: var(--open); }
 .runs .rt { grid-column: 2; font-size: 11px; color: var(--muted); }
 .viewing { background: var(--credit-soft); color: var(--ink); border-radius: 8px; padding: 6px 10px; font-size: 13px; margin-bottom: 10px; }
+
+.chips .x { background: transparent; color: var(--muted); padding: 0 4px; font-size: 15px; line-height: 1; }
+.chips .x:hover { color: var(--refuted); }
+.atts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.att { font-size: 12px; text-decoration: none; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,.18);
+       color: inherit; border: 1px solid rgba(255,255,255,.35); }
+.msg.assistant .att { background: var(--accent-soft); border-color: var(--line); }
+.att:hover { filter: brightness(1.1); text-decoration: underline; }

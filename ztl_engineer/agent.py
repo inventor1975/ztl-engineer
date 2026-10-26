@@ -84,7 +84,8 @@ def build(history: list[dict], files: list[dict], preset: dict) -> dict:
     """history: [{"role": "user"|"assistant", "text": ...}]; files: [{"kind","name","data","mime"}].
     Returns the model's JSON plus "usd" (the cost of the calls)."""
     cad = [f for f in files if f["kind"] in ("netlist", "bom", "deck")]
-    convo = "\n".join(f"{m['role'].upper()}: {m['text']}" for m in history)
+    convo = "\n".join(f"{m['role'].upper()}: {m['text']}"
+                      + (f"  [attached: {', '.join(m['files'])}]" if m.get("files") else "") for m in history)
     if cad:
         listing = "\n\n".join(f"--- {f['name']} ---\n{f['data'].decode('utf-8', 'replace')[:20000]}"
                               for f in cad if f["kind"] != "bom")
