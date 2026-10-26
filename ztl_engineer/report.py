@@ -113,12 +113,17 @@ def html_report(session, run: dict) -> str:
     if r.get("guaranteed"):
         sec("Proved to stay within", kv(r["guaranteed"]) + (
             "<p><small>" + "<br>".join(f"{H(k)}: {H(v)}" for k, v in (r.get("how") or {}).items()) + "</small></p>"))
+    if r.get("closest_design"):
+        sec("Closest design", kv({k: _choice(v) for k, v in r["closest_design"].items()}))
     if r.get("its_violating_point"):
         sec("Where it fails", kv(r["its_violating_point"]) + (kv(r["value_there"]) if r.get("value_there") else ""))
-    mc = (r.get("minimal_conflicts") or {}).get("sets")
-    if mc:
-        sec("Requirements that cannot hold together", "<ul>" + "".join(
-            f"<li>{H(' + '.join(s))}</li>" for s in mc) + "</ul>")
+    mc = (r.get("minimal_conflicts") or {}).get("sets") or []
+    one, many = [x for x in mc if len(x) == 1], [x for x in mc if len(x) > 1]
+    if one:
+        sec("Fails on its own", "<ul>" + "".join(f"<li>{H(x[0])}</li>" for x in one) + "</ul>")
+    if many:
+        sec("Cannot hold together — relax one of each group", "<ul>" + "".join(
+            f"<li>{H(' + '.join(x))}</li>" for x in many) + "</ul>")
     vals = run.get("values") or []
     if vals:
         sec("Values the answer rests on", "<table><tr><th>Quantity</th><th>Value</th><th>Source</th></tr>" + "".join(

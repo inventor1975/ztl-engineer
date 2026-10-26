@@ -270,12 +270,18 @@ function details(r, brick) {
   if (r.guaranteed) h += `<h3 style="margin-top:10px">Proved to stay within</h3>${kv(withUnit(r.guaranteed))}` +
       (r.how ? `<p class="muted" style="font-size:12px">${Object.entries(r.how).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join("<br>")}</p>` : "");
   if (r.limit) h += `<h3 style="margin-top:10px">Limit</h3>${kv(r.limit)}`;
-  if (r.closest_design) h += `<h3 style="margin-top:10px">Closest design</h3>${kv(r.closest_design)}`;
+  if (r.closest_design && Object.keys(r.closest_design).length) h += `<h3 style="margin-top:10px">Closest design</h3>` +
+      `<div class="kv">${Object.entries(r.closest_design).map(([k, d]) => `<b>${esc(k)}</b><span>${esc(choice(d))}</span>`).join("")}</div>`;
   if (r.its_violating_point && Object.keys(r.its_violating_point).length) h += `<h3 style="margin-top:10px">Where it fails</h3>${kv(r.its_violating_point)}`;
   if (r.value_there) h += `<h3 style="margin-top:10px">Value there</h3>${kv(r.value_there)}`;
   if (r.overshoot) h += `<p class="muted" style="font-size:13px">Misses the requirement by ${esc(pretty(r.overshoot))}</p>`;
-  if (r.minimal_conflicts && r.minimal_conflicts.sets) h += `<h3 style="margin-top:10px">Requirements that cannot hold together</h3>` +
-    r.minimal_conflicts.sets.map((s) => `<div class="conflict">${s.map(esc).join(" + ")}</div>`).join("");
+  if (r.minimal_conflicts && r.minimal_conflicts.sets) {
+    // each set is a minimal conflict: a single requirement fails ON ITS OWN; a group fails only TOGETHER
+    const one = r.minimal_conflicts.sets.filter((x) => x.length === 1), many = r.minimal_conflicts.sets.filter((x) => x.length > 1);
+    if (one.length) h += `<h3 style="margin-top:10px">Fails on its own</h3>` + one.map((x) => `<div class="conflict">${esc(x[0])}</div>`).join("");
+    if (many.length) h += `<h3 style="margin-top:10px">Cannot hold together — relax one of each group</h3>` +
+      many.map((x) => `<div class="conflict">${x.map(esc).join(" <b>+</b> ")}</div>`).join("");
+  }
   return h;
 }
 
