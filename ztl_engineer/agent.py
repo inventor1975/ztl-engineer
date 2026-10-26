@@ -58,8 +58,12 @@ CAD_ROLE = """You turn a person's words into requirement lines for an engineerin
 circuit (a SPICE netlist + BOM) or truss (an ANSYS deck). Requirement syntax:
 - circuit: "V(node) within LO HI", "V(node) >= X", "I(Rname) <= X", "P(Rname) <= X" (SI units, SPICE suffixes ok)
 - truss: [node, "X" or "Y", op, value] for a displacement U(node, dir); op one of <=, >=
+If the person asks for the RANGE or the worst case of a quantity (e.g. "how far can node 42 move", "the proved range
+of V(out)"), list those quantities in "ranges": circuit "V(node)", truss "U(node,X)" / "U(node,Y)"; requirements may
+then be empty.
 Answer with ONE JSON object: {"reply": "<1-3 sentences>", "ready": true|false,
- "requirements": [...], "tolerance": "<truss only: modulus tolerance like 0.5%>", "question": "<one line>"}
+ "requirements": [...], "ranges": [...], "tolerance": "<truss only: modulus tolerance like 0.5%>",
+ "question": "<one line>"}
 The file's contents follow, then the person's words."""
 
 

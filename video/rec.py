@@ -203,6 +203,23 @@ def scene_heavy(r: Rec):
     r.mark("end")
 
 
+def scene_muhanna(r: Rec):
+    """Muhanna's interval-FEM benchmark: the proved range of the top corner over 2^101 tolerance corners"""
+    r.mark("start")
+    r.wait(1.0)
+    _pick_and_send(r, "heavy-muhanna", 1800)
+    r.wait(0.8)
+    r.scroll_to("#verdict")
+    r.move("#verdict")
+    r.wait(2.0)
+    r.scroll_to("#detailsCard", block="start")
+    r.move("#details .limit")
+    r.wait(3.0)
+    r.move("#details .limit:last-of-type")
+    r.wait(3.0)
+    r.mark("end")
+
+
 def scene_reproduce(r: Rec):
     """the latest run's downloads: the report shown, the brick re-run on the stand alone (real output)"""
     import subprocess
@@ -267,7 +284,7 @@ const t = setInterval(() => { document.getElementById('cmd').textContent = cmd.s
 </script></body></html>"""
 
 
-SCENES = {"pump": scene_pump, "fix": scene_fix, "published": scene_published, "heavy": scene_heavy,
+SCENES = {"pump": scene_pump, "fix": scene_fix, "published": scene_published, "heavy": scene_heavy, "muhanna": scene_muhanna,
           "reproduce": scene_reproduce}
 
 

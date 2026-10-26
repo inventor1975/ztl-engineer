@@ -299,7 +299,77 @@ class Session:
                       f"{len((self.brick or {}).get('laws', []))} laws, "
                       f"{len((self.brick or {}).get('requirements', []))} requirements")
         self.history.append({"role": "assistant", "text": reply, "preset": self.preset["id"]})
+        cad = getattr(self, "_cad", None) or {}
+        if cad.get("kind") == "truss" and cad.get("ranges") and not (self.brick or {}).get("requirements"):
+            self._truss_ranges(cad)
+            return
         self._judge_with_repair()
+
+    def _truss_ranges(self, cad):
+        """The proved range of each asked displacement: each END (min, max) in its own process (truss_end.py says
+        why — the judgement does not split, the ends are independent), all side by side. Progress is the stand's
+        own line per run on stderr ({"min": {"run": k, "bound": b, "verdict": v}})."""
+        import json as _json
+        import subprocess as _sp
+        import sys as _sys
+        import tempfile as _tf
+        self.job["phase"] = "proving"
+        with _tf.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as f:
+            f.write(cad["text"])
+            deck = f.name
+        here = pathlib.Path(__file__).resolve().parent.parent
+        env = dict(os.environ, PYTHONPATH=f"{here}{os.pathsep}{runner.STAND_DIR}", OPENBLAS_NUM_THREADS="1")
+        procs, state, outs = {}, {}, {}
+        targets = cad["ranges"][:4]
+        for t in targets:
+            self._log(f"the stand proves the range of {t}: its two ends in two processes")
+            for side in ("min", "max"):
+                key = (t, side)
+                procs[key] = _sp.Popen([_sys.executable, "-m", "ztl_engineer.truss_end", deck, str(cad["tol"]), t,
+                                        side], cwd=str(here), stdout=_sp.PIPE, stderr=_sp.PIPE, text=True, env=env)
+                state[key] = {}
+
+                def read_err(key=key):
+                    for line in procs[key].stderr:
+                        try:
+                            state[key] = _json.loads(line).get(key[1]) or state[key]
+                        except ValueError:
+                            pass
+
+                def read_out(key=key):
+                    outs[key] = procs[key].stdout.read()
+
+                threading.Thread(target=read_err, daemon=True).start()
+                threading.Thread(target=read_out, daemon=True).start()
+        self.job["procs"] = [p.pid for p in procs.values()]
+        while any(p.poll() is None for p in procs.values()):
+            self.job["elapsed"] = round(time.time() - self.job["t0"], 1)
+            done = sum(1 for p in procs.values() if p.poll() is not None)
+            runs = sum(int(e.get("runs") or e.get("run") or 0) for e in state.values())
+            self.job["note"] = f"{done} of {len(procs)} ends proved · {runs} stand runs so far"
+            time.sleep(1.0)
+        time.sleep(0.5)
+        res = {"verdict": "EARNED", "range_only": True, "exact_range": {},
+               "reproduce": [f'python3 -m ustand.truss {cad.get("name", "deck.txt")} --tol {cad["tol"]} --range "{t}"'
+                             for t in targets]}
+        for t in targets:
+            res["exact_range"][t] = {}
+            for side in ("min", "max"):
+                try:
+                    e = _json.loads(outs.get((t, side)) or "").get(side) or {}
+                except ValueError:
+                    e = {"why": (outs.get((t, side)) or "no answer")[-300:]}
+                res["exact_range"][t][side] = {"value": e.get("proved"), "approx": e.get("proved_approx"),
+                                               "at": e.get("attained_at"), "exact": e.get("exact"),
+                                               "runs": e.get("runs"), "why": e.get("why")}
+                if not e.get("proved"):
+                    res["verdict"] = "OPEN"
+        os.unlink(deck)
+        self.result = res
+        self.warranty = warranty.judge(res["verdict"], self.values)
+        self._log(f"ranges proved: {', '.join(res['exact_range'])}" if res["verdict"] == "EARNED"
+                  else f"verdict: {res['verdict']}")
+        self._record_run()
 
     def _from_cad(self, d) -> dict:
         net = [f for f in self.active if f["kind"] == "netlist"]
@@ -322,7 +392,10 @@ class Session:
         deck = [f for f in self.active if f["kind"] == "deck"][-1]
         self._log(f"the stand imports the truss deck {deck['name']}")
         reqs = [tuple(r) for r in d.get("requirements") or []]
-        return TRUSS.to_brick(deck["data"].decode("utf-8", "replace"), d.get("tolerance") or "0", reqs)
+        text = deck["data"].decode("utf-8", "replace")
+        self._cad = {"kind": "truss", "name": deck["name"], "text": text, "tol": d.get("tolerance") or "0",
+                     "ranges": [str(t) for t in d.get("ranges") or []]}
+        return TRUSS.to_brick(text, d.get("tolerance") or "0", reqs)
 
     def _rejudge(self):
         self._log("a value was corrected — the stand judges again")
@@ -415,7 +488,7 @@ class Session:
         keep = ("verdict", "why", "design", "guaranteed", "objective", "how", "rests_on", "minimal_conflicts",
                 "closest_design", "its_violating_point", "value_there", "overshoot", "reasons", "fails", "limit",
                 "find", "decision", "designs_count", "designs_tried", "designs_total", "quantity", "unit", "exact_range",
-                "guaranteed_unit",
+                "guaranteed_unit", "range_only", "reproduce",
                 "proved", "proved_means", "beyond", "beyond_is", "precision")
         return {"id": self.id, "preset": self.preset["id"], "history": self.history, "question": self.question,
                 "files": [{k: f.get(k) for k in ("name", "kind", "size", "msg")} for f in self.files],

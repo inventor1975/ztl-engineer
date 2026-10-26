@@ -17,8 +17,9 @@ LEAD = 0.4            # narration starts this long after its scene
 TAIL = 0.8            # and the scene runs this long after the narration ends
 
 # the wait to compress in each scene: (from event, to event, how many seconds it should last on screen)
-WAITS = {"pump": ("sent", "verdict", 4.0), "published": ("sent", "verdict", 4.0), "heavy": ("sent", "verdict", 9.0)}
-ORDER = ["title", "pump", "fix", "published", "heavy", "reproduce", "end"]
+WAITS = {"pump": ("sent", "verdict", 4.0), "published": ("sent", "verdict", 4.0), "heavy": ("sent", "verdict", 9.0),
+         "muhanna": ("sent", "verdict", 7.0)}
+ORDER = ["title", "pump", "fix", "published", "heavy", "muhanna", "reproduce", "end"]
 
 
 def run(args):

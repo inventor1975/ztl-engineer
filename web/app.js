@@ -131,7 +131,7 @@ function render(s0) {
     bar.classList.remove("indet"); bar.firstElementChild.style.width = `${Math.min(100, j.percent || 0)}%`;
     $("pcount").textContent = `${j.tried} of ${j.total} designs · ${fmtTime(j.stand_elapsed || j.elapsed)}${j.note ? " · " + j.note : ""}`;
   } else if (running) {
-    bar.classList.add("indet"); $("pcount").textContent = `${j.elapsed || 0}s`;
+    bar.classList.add("indet"); $("pcount").textContent = `${fmtTime(j.elapsed || 0)}${j.note ? " · " + j.note : ""}`;
   } else {
     bar.classList.remove("indet"); bar.firstElementChild.style.width = j.phase === "done" ? "100%" : "0%";
     $("pcount").textContent = j.elapsed ? `${j.elapsed}s` : "";
@@ -160,6 +160,10 @@ function render(s0) {
                    REFUTED: "Refuted: the design fails at a concrete point — see Details.",
                    OPEN: "Undecided: the stand could not prove it either way, and does not guess." };
     let extra = "";
+    if (r.range_only && r.verdict === "EARNED") {
+      HEAD[v] = "Proved range: every value the tolerances allow stays inside it, and both ends are attained.";
+      v = "PROVED";
+    }
     if (r.find && r.proved) {
       // a search: the headline is the limit found; the design as stated gets its own verdict line
       const sought = s.brick && s.brick.quantities && s.brick.quantities[r.quantity];
@@ -169,8 +173,8 @@ function render(s0) {
       v = "FOUND";
     }
     const ai = (s.values || []).filter((x) => x.from !== "file" && x.from !== "you").length;
-    $("verdict").className = `verdict ${v === "FOUND" ? "EARNED" : chipClass(v)}`;
-    $("verdict").innerHTML = `<span class="chip">${esc(v)}</span><span class="head">${esc(HEAD[r.verdict] && v === "FOUND" ? HEAD[r.verdict] : HEAD[v] || w.headline)}</span>${extra}
+    $("verdict").className = `verdict ${v === "FOUND" || v === "PROVED" ? "EARNED" : chipClass(v)}`;
+    $("verdict").innerHTML = `<span class="chip">${esc(v)}</span><span class="head">${esc((v === "FOUND" || v === "PROVED") ? HEAD[r.verdict] : HEAD[v] || w.headline)}</span>${extra}
       ${s.question ? `<span class="why">Question: ${esc(s.question)}</span>` : ""}
       ${ai ? `<span class="note">${ai} of the values come from Muse Spark's reading of your words or files — check them
         in the table; change any and press Recalculate.</span>` : (s.values && s.values.length ? `<span class="note">Every value is yours.</span>` : "")}
@@ -230,7 +234,17 @@ function pretty(v) {
   return m ? "≈ " + m[1] : s;
 }
 const fmt = (x) => (typeof x === "number" ? (Math.abs(x) >= 1000 || Math.abs(x) < 0.01 ? x.toPrecision(5) : x.toFixed(4).replace(/0+$/, "").replace(/\.$/, "")) : String(x ?? "—"));
-const pts = (at) => at ? Object.entries(at).map(([k, v]) => `${k}=${pretty(v)}`).join(", ") : "—";
+// a long corner (Muhanna's cantilever: 101 moduli) is named, not listed: the full point is in results.json
+// a range's two ends with enough digits to tell them apart (Muhanna: 18117.870 … 18299.962, not 18118 … 18300)
+const fmtRange = (a, b) => {
+  if (typeof a !== "number" || typeof b !== "number") return `${fmt(a)} … ${fmt(b)}`;
+  const w = Math.abs(b - a), m = Math.max(Math.abs(a), Math.abs(b));
+  if (!w || !m || w / m > 0.05) return `${fmt(a)} … ${fmt(b)}`;
+  const d = Math.min(12, Math.max(0, 4 - Math.floor(Math.log10(w))));
+  return `${a.toFixed(d)} … ${b.toFixed(d)}`;
+};
+const pts = (at) => !at ? "—" : Object.keys(at).length > 8 ? `a corner of all ${Object.keys(at).length} tolerances (full point in Results)`
+  : Object.entries(at).map(([k, v]) => `${k}=${pretty(v)}`).join(", ");
 // a design choice as people read it: {"catalog":"res_1pct","R":{"nominal":"1000","tolerance":"1/100"}} -> "R 1000 ±1% (res_1pct)"
 function choice(d) {
   if (d === null || typeof d !== "object") return pretty(d);
@@ -275,7 +289,7 @@ function details(r, brick) {
       `<div class="kv">${Object.entries(r.design).map(([slot, d]) => `<b>${esc(slot)}</b><span>${esc(choice(d))}</span>`).join("")}</div>`;
   if (r.exact_range) h += `<h3 style="margin-top:10px">Exact worst case</h3>` + Object.entries(r.exact_range).map(([t, e]) =>
       e.error ? `<p class="muted">${esc(t)}: ${esc(e.error)}</p>` :
-      `<div class="limit"><span class="muted">${esc(t)} over every tolerance</span><b>${esc(fmt(e.min && e.min.approx))} … ${esc(fmt(e.max && e.max.approx))}</b>
+      `<div class="limit"><span class="muted">${esc(t)} over every tolerance${e.min && e.min.exact && e.max && e.max.exact ? " — both ends exact" : ""}</span><b>${esc(fmtRange(e.min && e.min.approx, e.max && e.max.approx))}</b>
         <span class="muted">min at ${esc(pts(e.min && e.min.at))}</span><span class="muted">max at ${esc(pts(e.max && e.max.at))}</span></div>`).join("");
   // what was checked: the requirements as the stand got them — the person sees how the model read the question
   const reqs = (brick && brick.requirements) || [];

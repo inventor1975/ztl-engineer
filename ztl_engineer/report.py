@@ -25,6 +25,21 @@ def _approx(v) -> str:
     return f"≈ {m.group(1)}" if m else s
 
 
+def _end(e) -> str:
+    """a range end: its decimal approximation (the exact fraction is in results.json)"""
+    e = e or {}
+    if isinstance(e.get("approx"), (int, float)):
+        return f"{e['approx']:.10g}"
+    return _approx(e.get("value"))
+
+
+def _at(at) -> str:
+    """the corner a range end is attained at; a long one (101 moduli) is named, its values are in results.json"""
+    if isinstance(at, dict) and len(at) > 8:
+        return f"a corner of all {len(at)} tolerances (the full point is in results.json)"
+    return _approx(at or {})
+
+
 def _choice(d) -> str:
     """{"catalog":"engines","T":{"nominal":"60","tolerance":"0"}} -> "T 60 (engines)"."""
     if not isinstance(d, dict):
@@ -82,7 +97,15 @@ def html_report(session, run: dict) -> str:
     head = {"EARNED": "Proved: the design holds for every value the tolerances allow.",
             "REFUTED": "Refuted: the design fails at a concrete point.",
             "OPEN": "Undecided: the stand could not prove it either way."}.get(verdict, str(r.get("why", "")))
+    if r.get("range_only") and verdict == "EARNED":
+        verdict, head = "PROVED", "Proved range: every value the tolerances allow stays inside it, and both ends are attained."
     rows = []
+    if r.get("reproduce"):
+        repro = ("<p>Run the stand alone on the same deck — no model, no app (ztl-stand and ZTL from "
+                 "github.com/inventor1975):</p>" + "".join(f"<p><code>{H(c)}</code></p>" for c in r["reproduce"]))
+    else:
+        repro = ("<p>Save the brick below as <code>brick.json</code> and run the stand alone — no model, no app: "
+                 "<code>python3 -m ustand.stand brick.json</code> (ztl-stand and ZTL from github.com/inventor1975).</p>")
 
     def sec(title, body):
         rows.append(f"<h2>{H(title)}</h2>{body}")
@@ -104,9 +127,10 @@ def html_report(session, run: dict) -> str:
             f"<p>{H(r.get('beyond_is', ''))}</p>")
     if r.get("exact_range"):
         sec("Exact worst case", "".join(
-            f"<p><b>{H(t)}</b>: {H(_approx((e.get('min') or {}).get('value')))} … "
-            f"{H(_approx((e.get('max') or {}).get('value')))}<br><small>min at {H(_approx((e.get('min') or {}).get('at') or {}))}"
-            f"; max at {H(_approx((e.get('max') or {}).get('at') or {}))}</small></p>"
+            f"<p><b>{H(t)}</b>: {H(_end(e.get('min')))} … {H(_end(e.get('max')))}"
+            f"{' — both ends exact' if (e.get('min') or {}).get('exact') and (e.get('max') or {}).get('exact') else ''}"
+            f"<br><small>min at {H(_at((e.get('min') or {}).get('at')))}"
+            f"; max at {H(_at((e.get('max') or {}).get('at')))}</small></p>"
             for t, e in r["exact_range"].items() if not e.get("error")))
     ob = r.get("objective") or {}
     if ob.get("value") is not None:
@@ -152,8 +176,7 @@ table{{border-collapse:collapse;width:100%;font-size:14px}}th,td{{text-align:lef
 <p><b>Question:</b> {H(run['question'])}</p>
 <div class="verdict"><span class="chip">{H(verdict)}</span> <b>{H(head)}</b><br><small>{H(str(r.get('why') or ''))}</small></div>
 {''.join(rows)}
-<h2>Reproduce it</h2><p>Save the brick below as <code>brick.json</code> and run the stand alone — no model, no app:
-<code>python3 -m ustand.stand brick.json</code> (ztl-stand and ZTL from github.com/inventor1975).</p>
+<h2>Reproduce it</h2>{repro}
 <details><summary>The brick</summary><pre>{b_json}</pre></details>
 <details><summary>The stand's full answer</summary><pre>{r_json}</pre></details>
 <p class="meta">Values marked "AI read" were read or assumed by Muse Spark from the person's words or files; the

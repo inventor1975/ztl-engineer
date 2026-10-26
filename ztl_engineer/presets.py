@@ -169,6 +169,19 @@ PRESETS += [
      "note": "Heavy: about 13 minutes with 16 cores (8^5 = 32 768 designs, 91 requirements; measured 760 s). The "
              "progress bar shows the stand's own count of designs decided; it stops early once the lightest design is proved.",
      "inputs": ["brick"]},
+    {"id": "heavy-muhanna", "group": "Heavy — takes minutes", "icon": "🗼",
+     "title": "Muhanna's cantilever — 2^101 tolerance corners (about 13 min, 4 cores)",
+     "say": "A published interval-FEM benchmark (R. Muhanna, IFEM Benchmark 2): a 20-floor one-bay truss cantilever, "
+            "101 bars, every bar's modulus ±0.5 %. Ask for the PROVED range of the top corner's displacement — the "
+            "exact lowest and highest value over all 2^101 combinations of the tolerances, not a sample.",
+     "give": "Nothing: the example brings the truss deck (an ANSYS-style input file).",
+     "example": "With every bar's modulus ±0.5 %, what is the proved range of node 42's horizontal and vertical "
+                "displacement?",
+     "demo": ["stand:examples/truss/cantilever20.txt"],
+     "note": "Heavy: about 13 minutes (measured 758 s). Each end of each range is its own proof — three stand runs "
+             "of about 3 minutes each, which do not split further — so the four ends run side by side on 4 cores. "
+             "The answer is the exact range: both ends are attained by a real corner and proved not to be exceeded.",
+     "inputs": ["deck"]},
 ]
 
 # the drop-down's groups: "Any" stays first and alone; the simple tasks in their own group (curator, 26.10)
