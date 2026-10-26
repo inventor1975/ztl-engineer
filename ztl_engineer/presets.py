@@ -65,8 +65,9 @@ PRESETS = [
     {"id": "adc", "title": "Amplifier + ADC error budget", "icon": "📈",
      "say": "Give the amplifier's offset and gain errors and the ADC's; ask whether the total stays within budget.",
      "give": "The amplifier and ADC datasheets.",
-     "example": "Op-amp offset up to 1 mV, gain 10 with 0.1% resistors, 12-bit ADC with ±2 LSB. Is the total "
-                "error under 0.5% of full scale?",
+     "example": "A sensor gives 0–100 mV. A non-inverting op-amp stage with gain 10 (set by two 0.1% resistors, "
+                "input offset up to 1 mV) feeds a 12-bit ADC with a 1.25 V reference (±0.1%) and ±2 LSB error. "
+                "Is the total error under 1.5% of full scale over the whole input range?",
      "inputs": ["pdf"]},
     {"id": "ntc", "title": "Thermistor — trip temperatures", "icon": "🌡️",
      "say": "Give the NTC part, its divider and the comparator thresholds; ask the guaranteed trip temperatures.",

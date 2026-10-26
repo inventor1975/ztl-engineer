@@ -113,3 +113,22 @@ def repair(brick: dict, error: str, values: list[dict]) -> dict:
     d = _json(out["text"])
     d["usd"] = out["usd"]
     return d
+
+
+def reformulate(brick: dict, why: str, values: list[dict]) -> dict:
+    """The stand answered OPEN: its interval reading of the bounded quantity was too wide to decide. The usual cause
+    is DEPENDENCY — one toleranced quantity appearing several times in the expression (an interval reading cannot
+    cancel x - x). Ask the model to rewrite the laws, same physics, same numbers, with each toleranced or ranged
+    given appearing as few times as possible in what a requirement bounds (expanded and cancelled by hand), or as a
+    SUM of terms each reading few data (the stand proves a sum term by term)."""
+    msg = ("The stand could not decide this brick (OPEN). Its reason: " + why + "\n\nRewrite the laws so the stand "
+           "can decide: the SAME physics and the SAME numbers, but the quantity each requirement bounds written as one "
+           "explicit expression in which every toleranced or ranged given appears AS FEW TIMES AS POSSIBLE — expand "
+           "and cancel symbolically (e.g. instead of Vout - Videal with Vin in both, write Vin*(G*k - 10) + ...), or "
+           "write it as a SUM of terms that each read few quantities. Do NOT change any value, tolerance or range.\n\n"
+           f"The brick:\n{json.dumps(brick, ensure_ascii=False)}\n\nThe values and their sources:\n"
+           f"{json.dumps(values, ensure_ascii=False)}")
+    out = meta.ask(msg, instructions=ROLE + BRICKS_MD, effort="medium", max_output_tokens=12000)
+    d = _json(out["text"])
+    d["usd"] = out["usd"]
+    return d

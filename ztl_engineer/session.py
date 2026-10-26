@@ -149,7 +149,8 @@ class Session:
         sent = [f for f in self.files if f.get("msg") is None]
         for f in sent:
             f["msg"], f["preset"] = idx, self.preset["id"]
-        self.history.append({"role": "user", "text": text, "files": [f["name"] for f in sent]})
+        self.history.append({"role": "user", "text": text, "files": [f["name"] for f in sent],
+                             "preset": self.preset["id"]})
         self.save()
         self._start(self._pipeline)
 
@@ -212,7 +213,23 @@ class Session:
     def _log(self, s: str):
         self.job["log"].append({"t": round(time.time() - self.job.get("t0", time.time()), 1), "msg": s})
 
+    @property
+    def thread(self) -> list[dict]:
+        """The conversation the model sees: the messages since the task in the list last changed. An earlier task's
+        messages are not this question's context (measured 26.10: after a circuit run, an ADC-budget question was
+        answered with 'please paste sensor-divider.cir' — the model read the old task into the new one)."""
+        out = []
+        for m in reversed(self.history):
+            if m.get("preset", self.preset["id"]) != self.preset["id"]:
+                break
+            out.append(m)
+        return list(reversed(out))
+
     def _pipeline(self):
+        # a new question starts with a clean panel: the previous answer stays in self.runs, not on screen as if
+        # it were this question's
+        self.result = self.warranty = self.brick = None
+        self.values, self.question = [], ""
         self.job["phase"] = "reading"
         files = self.active
         bricks = [f for f in files if f["kind"] == "brick"]
@@ -225,19 +242,19 @@ class Session:
         else:
             n_img = sum(f["kind"] in ("photo", "pdf") for f in files)
             self._log(f"Muse Spark reads the conversation and {n_img} image/PDF file(s)")
-            d = agent.build(self.history, files, self.preset)
+            d = agent.build(self.thread, files, self.preset)
             self.usd += d.get("usd", 0)
             reply = d.get("reply", "")
             self.question = d.get("question", "") or self.question
             if not d.get("ready"):
-                self.history.append({"role": "assistant", "text": reply})
+                self.history.append({"role": "assistant", "text": reply, "preset": self.preset["id"]})
                 self._log("the model needs more information")
                 return
             if d.get("road") == "cad":
                 try:
                     self.brick, self.values = self._from_cad(d), []
                 except Exception as e:          # noqa: BLE001 — an importer's refusal is the file's fault, said as such
-                    self.history.append({"role": "assistant", "text": reply})
+                    self.history.append({"role": "assistant", "text": reply, "preset": self.preset["id"]})
                     self.result = {"verdict": "BRICK ERROR", "why": f"the file could not be imported: {e}"}
                     self.warranty = warranty.judge("BRICK ERROR", [])
                     self._log(f"import refused: {e}")
@@ -255,7 +272,7 @@ class Session:
             self._log(f"brick built: {len((self.brick or {}).get('quantities', {}))} quantities, "
                       f"{len((self.brick or {}).get('laws', []))} laws, "
                       f"{len((self.brick or {}).get('requirements', []))} requirements")
-        self.history.append({"role": "assistant", "text": reply})
+        self.history.append({"role": "assistant", "text": reply, "preset": self.preset["id"]})
         self._judge_with_repair()
 
     def _from_cad(self, d) -> dict:
@@ -294,10 +311,40 @@ class Session:
             self.usd += d.get("usd", 0)
             if d.get("brick"):
                 self.brick = d["brick"]
+        if res.get("verdict") == "OPEN" and self.values:
+            # one more agentic step: the reading was too wide; the model rewrites the form (never the data)
+            self.job["phase"] = "repairing"
+            self._log("OPEN — Muse Spark rewrites the laws so the stand can decide (same numbers)")
+            first = res
+            d = agent.reformulate(self.brick, " ".join(
+                str(x.get("why", "")) for x in (res.get("designs") or [])[:3]) or str(res.get("why")), self.values)
+            self.usd += d.get("usd", 0)
+            if d.get("brick") and self._same_data(d["brick"]):
+                self.job["phase"] = "proving"
+                self._log("the ZTL stand judges the rewritten design")
+                res2 = self._run_stand(copy.deepcopy(d["brick"]))
+                if res2.get("verdict") in ("EARNED", "REFUTED"):
+                    self.brick, res = d["brick"], res2
+                else:
+                    self._log(f"still {res2.get('verdict')} — the first answer stands")
+                    res = first
+            else:
+                self._log("the rewrite changed the data — rejected")
         self.result = res
         self.warranty = warranty.judge(res.get("verdict", ""), self.values)
         self._log(f"verdict: {res.get('verdict')}; warranty: {self.warranty['status']}")
         self._record_run()
+
+    def _same_data(self, new: dict) -> bool:
+        """A rewrite may change laws and derived names, never a given's value, tolerance or range."""
+        old_q, new_q = (self.brick or {}).get("quantities", {}), new.get("quantities", {})
+        keys = ("value", "tolerance", "range")
+        for name, q in old_q.items():
+            if q.get("role") == "given":
+                n = new_q.get(name)
+                if not n or any(str(q.get(k)) != str(n.get(k)) for k in keys):
+                    return False
+        return True
 
     def _run_stand(self, brick) -> dict:
         jid = runner.start(brick)
