@@ -179,3 +179,4 @@ table.vals input.changed { border-color: var(--credit); box-shadow: 0 0 0 3px va
 .downloads { font-size: 13px; margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; color: var(--muted); }
 .downloads a { text-decoration: none; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); }
 .downloads a:hover { border-color: var(--accent); }
+.detailsMid { margin-top: 14px; }

@@ -54,6 +54,12 @@
       </div>
     </div>
 
+    <div class="card detailsMid" id="detailsCard" hidden>
+      <h3>Details</h3>
+      <div id="details"></div>
+      <details><summary>The brick sent to the stand</summary><pre class="json" id="brick"></pre></details>
+      <details><summary>The stand's full answer</summary><pre class="json" id="raw"></pre></details>
+    </div>
   </section>
 
   <!-- right: verdict, progress, values, details -->
@@ -69,12 +75,6 @@
       <table class="vals"><thead><tr><th>Quantity</th><th>Value</th><th>Source</th><th></th></tr></thead>
         <tbody id="vals"></tbody></table>
       <button id="recalc" style="margin-top:10px" disabled>Recalculate</button>
-    </div>
-    <div class="card" id="detailsCard" hidden>
-      <h3>Details</h3>
-      <div id="details"></div>
-      <details><summary>The brick sent to the stand</summary><pre class="json" id="brick"></pre></details>
-      <details><summary>The stand's full answer</summary><pre class="json" id="raw"></pre></details>
     </div>
   </section>
 </main>
