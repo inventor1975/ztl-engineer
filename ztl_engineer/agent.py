@@ -40,6 +40,9 @@ Rules:
   "user" (the person typed it), "assumption" (a standard value you chose) — and a short "where" (e.g.
   "nameplate: H max 32 m", "datasheet p.2 table 1", "user: 60 m of pipe").
 - Use tolerances or ranges when the source gives them; a nameplate value with no tolerance is exact.
+- A centrifugal pump's curve from a nameplate: H = H0 - a*Q^2 (the stand's form, BRICKS.md), with H0 = the shutoff
+  head (H max) and a fixed by the rated point; say in "reply" which plate points you used and which you did not.
+- Pipe friction the person did not give is an "assumption" you state with its value — not silently zero.
 - Keep the brick as small as the question needs. Units always. Numbers always as strings.
 - If the question truly cannot be posed yet, set "ready": false and ask in "reply" for exactly what is missing.
 

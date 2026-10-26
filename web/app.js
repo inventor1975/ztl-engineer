@@ -38,7 +38,7 @@ async function init() {
   const groups = [...new Set(PRESETS.map((p) => p.group || ""))];
   $("preset").innerHTML = groups.map((g) => g ? `<optgroup label="${esc(g)}">${PRESETS.filter((p) => p.group === g).map(opt).join("")}</optgroup>`
                                               : PRESETS.filter((p) => !p.group).map(opt).join("")).join("");
-  $("preset").value = "pump";                // the default task (curator): the pump, first among the examples
+  $("preset").value = "borehole";            // the default task: the village borehole (the film's main case, 26.10)
   $("preset").onchange = () => showHint(PRESETS.find((p) => p.id === $("preset").value));
   // the session survives going to Help and back, and a server restart: its id is kept in this browser
   let sid = null;
@@ -309,6 +309,12 @@ function details(r, brick) {
   if (r.its_violating_point && Object.keys(r.its_violating_point).length) h += `<h3 style="margin-top:10px">Where it fails</h3>${kv(r.its_violating_point)}`;
   if (r.value_there) h += `<h3 style="margin-top:10px">Value there</h3>${kv(r.value_there)}`;
   if (r.overshoot) h += `<p class="muted" style="font-size:13px">Misses the requirement by ${esc(pretty(r.overshoot))}</p>`;
+  // the failing quantity over the corners of every range (the stand's "spread": exact when it moves one way in each)
+  const sp = (r.reasons || {}).spread_over_tolerances;
+  if (sp && r.verdict === "REFUTED") {
+    const q = Object.keys(r.value_there || {})[0] || (reqs[0] || {}).quantity || "", u = r.unit || ((Qs[q] || {}).unit) || "";
+    h += `<h3 style="margin-top:10px">Over the whole range</h3><div class="limit"><span class="muted">${esc(q)} at the ends of every range</span><b>${esc(pretty(sp[0]))} … ${esc(pretty(sp[1]))} ${esc(u)}</b></div>`;
+  }
   if (r.minimal_conflicts && r.minimal_conflicts.sets) {
     // each set is a minimal conflict: a single requirement fails ON ITS OWN; a group fails only TOGETHER
     const one = r.minimal_conflicts.sets.filter((x) => x.length === 1), many = r.minimal_conflicts.sets.filter((x) => x.length > 1);

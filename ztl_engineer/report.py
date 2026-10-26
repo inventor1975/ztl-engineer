@@ -132,6 +132,10 @@ def html_report(session, run: dict) -> str:
             f"<br><small>min at {H(_at((e.get('min') or {}).get('at')))}"
             f"; max at {H(_at((e.get('max') or {}).get('at')))}</small></p>"
             for t, e in r["exact_range"].items() if not e.get("error")))
+    sp = (r.get("reasons") or {}).get("spread_over_tolerances")
+    if sp and r.get("verdict") == "REFUTED":
+        sec("Over the whole range", f"<p>{H(_approx(sp[0]))} … {H(_approx(sp[1]))} {H(r.get('unit', ''))} at the ends "
+                                    f"of every range (exact when the quantity moves one way in each value)</p>")
     ob = r.get("objective") or {}
     if ob.get("value") is not None:
         sec("Optimal" if ob.get("optimal") else "Best found",

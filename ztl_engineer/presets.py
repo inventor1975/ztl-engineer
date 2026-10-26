@@ -16,6 +16,18 @@ PRESETS = [
                 "battery alone keeps the fridge running through 2 cloudy days, and that one sunny day (4.5 peak sun "
                 "hours) refills what those days used.",
      "inputs": ["photo", "pdf"]},
+    {"id": "borehole", "title": "Village borehole — enough water from this solar pump?", "icon": "🚰",
+     "say": "Say how much water a day is needed, where the water stands in the borehole, how high the tank is and "
+            "how many sun hours there are. What nobody measured (how far the water drops while pumping) give as a "
+            "range — the stand checks every value in it. Any language.",
+     "give": "A photo of the solar pump's nameplate or its datasheet. A second pump can be attached later to compare.",
+     "example": "Cette pompe donne-t-elle 8 m³ par jour au village ? L'eau est à 22 m, je ne sais pas de combien "
+                "elle baisse en pompant — peut-être 5 à 15 m. Réservoir sur une tour de 6 m. 5 à 6 heures de soleil.",
+     "demo": ["nameplate-solar-sp400.png"],
+     "note": "Illustrative case with demo nameplates. The pump on the first plate is what a seller would pick from "
+             "the resting water level (8 m³ in 5 sun hours at about 30 m); a second plate, SP-750, is in the demo "
+             "folder to compare.",
+     "inputs": ["photo", "pdf"]},
     {"id": "pump", "title": "Water pump — will it deliver?", "icon": "💧",
      "say": "Say what the pump must do (flow, lift height, pipe length and diameter) and ask whether this pump "
             "does it — or ask what head the pump needs.",
@@ -194,4 +206,4 @@ def by_id(pid: str) -> dict:
     for p in PRESETS:
         if p["id"] == pid:
             return p
-    return PRESETS[1]          # the pump, the app's default
+    return by_id("borehole") if pid != "borehole" else PRESETS[1]   # the village borehole, the app's default
