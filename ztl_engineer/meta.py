@@ -22,7 +22,7 @@ import urllib.error
 import urllib.request
 
 API = "https://api.meta.ai/v1/responses"
-MODEL = os.environ.get("ZTE_MODEL", "muse-spark-1.3")
+MODEL = os.environ.get("ZTL_ENGINEER_MODEL", "muse-spark-1.3")
 
 # USD per token, from dev.meta.ai/docs/pricing-rate-limits (read 2026-10-26)
 PRICES = {
@@ -31,9 +31,9 @@ PRICES = {
     "muse-spark-1.3-contributor": {"input": 0.10e-6, "cached": 0.002e-6, "output": 0.20e-6},
 }
 
-CAP_USD = float(os.environ.get("ZTE_SPEND_CAP_USD", "100"))
+CAP_USD = float(os.environ.get("ZTL_ENGINEER_SPEND_CAP_USD", "100"))
 LEDGER = pathlib.Path(os.environ.get(
-    "ZTE_LEDGER", pathlib.Path.home() / ".local" / "state" / "ztl-engineer" / "spend.json"))
+    "ZTL_ENGINEER_LEDGER", pathlib.Path.home() / ".local" / "state" / "ztl-engineer" / "spend.json"))
 _LOCK = threading.Lock()
 
 

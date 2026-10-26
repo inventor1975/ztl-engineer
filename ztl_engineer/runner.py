@@ -19,7 +19,7 @@ import traceback
 import uuid
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
-STAND_DIR = pathlib.Path(os.environ.get("ZTE_STAND", HERE.parent / "ztl-stand")).resolve()
+STAND_DIR = pathlib.Path(os.environ.get("ZTL_ENGINEER_STAND", HERE.parent / "ztl-stand")).resolve()
 if str(STAND_DIR) not in sys.path:
     sys.path.insert(0, str(STAND_DIR))
 
@@ -28,7 +28,7 @@ from ustand import stopflag as SF      # noqa: E402
 
 _RUN_LOCK = threading.Lock()
 JOBS: dict[str, dict] = {}
-TIME_LIMIT_S = int(os.environ.get("ZTE_STAND_TIME_LIMIT", "600"))
+TIME_LIMIT_S = int(os.environ.get("ZTL_ENGINEER_STAND_TIME_LIMIT", "600"))
 
 
 def _watch(job):

@@ -3,7 +3,7 @@
 
     python3 server.py [--port 8090]     then open http://localhost:8090
 
-Needs ZTL and ztl-stand cloned beside this repository (or ZTE_STAND / USTAND_ZTL pointing at them) and a Meta
+Needs ZTL and ztl-stand cloned beside this repository (or ZTL_ENGINEER_STAND / USTAND_ZTL pointing at them) and a Meta
 Model API key in META_API_KEY or ~/.config/meta-api-key.
 """
 from __future__ import annotations
@@ -18,7 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from zte import meta, presets, session as SS  # noqa: E402
+from ztl_engineer import meta, presets, session as SS  # noqa: E402
 
 WEB = HERE / "web"
 MAX_BODY = 40 * 1024 * 1024
