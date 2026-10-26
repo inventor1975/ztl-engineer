@@ -364,7 +364,7 @@ class Session:
             self._exact_ranges(res)
         self.result = res
         self.warranty = warranty.judge(res.get("verdict", ""), self.values)
-        self._log(f"verdict: {res.get('verdict')}; warranty: {self.warranty['status']}")
+        self._log(f"verdict: {'FOUND (' + str(res.get('verdict')) + ')' if res.get('find') and res.get('proved') else res.get('verdict')}")
         self._record_run()
 
     def _exact_ranges(self, res):

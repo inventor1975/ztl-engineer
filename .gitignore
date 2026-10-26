@@ -5,3 +5,6 @@ uploads/
 runs/
 .env
 .claude/
+video/raw/
+video/out/
+video/audio/

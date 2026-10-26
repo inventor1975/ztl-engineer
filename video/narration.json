@@ -1,0 +1,9 @@
+{
+ "title": "An AI can sound sure of itself — but it cannot vouch for its answer. An engineer needs a proof. This is ZTL Engineer: Meta's Muse Spark reads, and the ZTL stand proves.",
+ "pump": "Pick a task. Will this pump deliver two litres per second, twenty metres up? The example brings a photo of the nameplate. Muse Spark reads the plate and the question, and turns them into equations, tolerances and requirements. The stand then proves the answer for every value the tolerances allow. Earned. Every number it rests on is in the table, with where the AI read it.",
+ "fix": "Suppose you check the real pump, and its rated head is twenty-one metres, not twenty-four. Change it, and press Recalculate. Now it is refuted: at two litres per second the pipe needs twenty-one and a half metres, and the pump gives only twenty-one.",
+ "published": "Can it catch real mistakes? A Texas Instruments datasheet picks a forty-nine point nine kilo-ohm resistor to guarantee a one-amp current limit. Counting the resistor's own one percent tolerance, the stand refutes that choice, and finds the largest value that truly guarantees it: forty-nine point four seven kilo-ohms.",
+ "heavy": "It scales. A thirty-six metre bridge girder: over thirty-two thousand designs, ninety-one requirements, every load with its tolerance. Sixteen cores, about thirteen minutes, sped up here. Earned, and proved optimal: the lightest steel that meets every requirement.",
+ "reproduce": "Every run downloads as a report, and as the stand's own problem file. Run that file on the open-source stand alone — no AI, no app — and you get the same verdict. The AI reads; the proof does not depend on it.",
+ "end": "Built during this hackathon: the app and the Muse Spark agent. ZTL and the stand are the author's earlier open-source work. ZTL Engineer."
+}
