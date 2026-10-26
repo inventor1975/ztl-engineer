@@ -17,9 +17,14 @@ LEAD = 0.4            # narration starts this long after its scene
 TAIL = 0.8            # and the scene runs this long after the narration ends
 
 # the wait to compress in each scene: (from event, to event, how many seconds it should last on screen)
-WAITS = {"pump": ("sent", "verdict", 4.0), "published": ("sent", "verdict", 4.0), "heavy": ("sent", "verdict", 7.0),
-         "muhanna": ("sent", "verdict", 4.0)}
-ORDER = ["title", "pump", "fix", "published", "heavy", "muhanna", "reproduce", "end"]
+WAITS = {"pump": ("sent", "verdict", 4.0), "published": ("sent", "verdict", 3.0), "heavy": ("sent", "verdict", 4.0),
+         "muhanna": ("sent", "verdict", 3.0), "borehole": ("sent", "verdict", 4.0), "borehole2": ("sent", "verdict", 3.0)}
+# the montage scenes start when the example is already in the box (the task picking is shown once, in the main case)
+START = {"published": "example in", "heavy": "example in", "muhanna": "example in"}
+CARDS = ("title", "problem", "options", "end")
+# montage scenes are cut from the front to their narration's length: the end (the result on screen) is what stays
+FIT_TO_VOICE = ("published", "heavy", "muhanna")
+ORDER = ["problem", "options", "borehole", "borehole2", "published", "heavy", "muhanna", "reproduce", "end"]
 
 
 def run(args):
@@ -41,7 +46,8 @@ def scene_video(name):
         a, b, want = WAITS[name]
         t1, t2 = ev[a] + 0.6, ev[b] - 0.3
         k = max(1.0, (t2 - t1) / want)
-        f = (f"[0:v]trim=0:{t1},setpts=PTS-STARTPTS[a];[0:v]trim={t1}:{t2},setpts=(PTS-STARTPTS)/{k}[b];"
+        t0 = max(0.0, ev[START[name]] - 0.5) if name in START else 0
+        f = (f"[0:v]trim={t0}:{t1},setpts=PTS-STARTPTS[a];[0:v]trim={t1}:{t2},setpts=(PTS-STARTPTS)/{k}[b];"
              f"[0:v]trim={t2},setpts=PTS-STARTPTS[c];[a][b][c]concat=n=3:v=1:a=0,fps=30[v]")
     else:
         f = "[0:v]fps=30[v]"
@@ -77,13 +83,19 @@ def main():
     OUT.mkdir(exist_ok=True)
     parts, timeline, t = [], [], 0.0
     for name in ORDER:
-        if name not in ("title", "end") and not (RAW / f"{name}.json").exists():
+        if name not in CARDS and not (RAW / f"{name}.json").exists():
             print(f"(skipped: {name} not recorded yet)")
             continue
-        if name in ("title", "end"):
+        if name in CARDS:
             v, d = card_video(name, 1.0)
         else:
             v, d = scene_video(name)
+            need = LEAD + sf.info(str(AUD / f"{name}.wav")).duration + TAIL + 0.3
+            if name in FIT_TO_VOICE and d > need:
+                cut = OUT / f"v_{name}_fit.mp4"
+                run(["-ss", f"{d - need:.3f}", "-i", str(v), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18",
+                     str(cut)])
+                v, d = cut, dur(cut)
         s, total = with_voice(name, v, d)
         parts.append(s)
         timeline.append((name, round(t, 1), round(total, 1)))

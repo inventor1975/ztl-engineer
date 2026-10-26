@@ -11,11 +11,26 @@ background:linear-gradient(135deg,#3b5bdb,#8b5cf6);box-shadow:0 20px 50px rgba(5
 h1{font-size:96px;margin:40px 0 10px;letter-spacing:-2px}.sub{font-size:40px;color:#5d6879}
 .line{font-size:30px;color:#5d6879;margin-top:14px}.url{font-size:40px;color:#3b5bdb;font-weight:700;margin-top:40px}
 .chips{display:flex;gap:18px;margin-top:46px}.chip{font-size:26px;font-weight:700;padding:10px 24px;border-radius:999px;color:#fff}
-small{position:absolute;bottom:40px;font-size:20px;color:#8a93a3}</style></head><body>__BODY__</body></html>"""
+small{position:absolute;bottom:40px;font-size:20px;color:#8a93a3}
+.stats{display:flex;flex-direction:column;gap:46px;width:1720px}.stat{display:grid;grid-template-columns:600px 1fr;align-items:baseline}
+.stat b{font-size:88px;letter-spacing:-2px;color:#3b5bdb;white-space:nowrap}.stat span{font-size:40px}.stat i{grid-column:2;font-size:22px;color:#8a93a3;font-style:normal}
+.opts{display:flex;gap:40px}.opt{width:440px;padding:40px;border-radius:24px;background:#fff;box-shadow:0 12px 40px rgba(24,32,47,.08);display:flex;flex-direction:column;gap:12px}
+.opt b{font-size:46px}.opt span{font-size:34px;color:#18202f}.opt i{font-size:26px;color:#d64545;font-style:normal}</style></head><body>__BODY__</body></html>"""
 CARDS = {
  "title": """<div class="logo">Z</div><h1>ZTL Engineer</h1><div class="sub">Muse Spark reads · ZTL proves</div>
    <div class="chips"><span class="chip" style="background:#1f9d55">EARNED</span><span class="chip" style="background:#d64545">REFUTED</span>
    <span class="chip" style="background:#6b7280">OPEN</span></div>""",
+ "problem": """<div class="stats">
+   <div class="stat"><b>2.1 billion</b><span>people lack safely managed drinking water</span><i>WHO/UNICEF JMP, 2025 report (2024 data)</i></div>
+   <div class="stat"><b>666 million</b><span>people have no electricity</span><i>Tracking SDG7, 2025 report (2023 data)</i></div>
+   <div class="stat"><b>&lt; 5</b><span>engineers per 10,000 people in developing countries</span><i>UNESCO estimate, as reported</i></div>
+   </div>""",
+ "options": """<div class="opts">
+   <div class="opt"><b>Engineer</b><span>$40–150 an hour</span><i>freelance rates</i></div>
+   <div class="opt"><b>Seller's tool</b><span>its own catalogue</span><i>nominal values</i></div>
+   <div class="opt"><b>AI chat</b><span>sounds sure</span><i>shows no proof</i></div>
+   </div><div class="logo" style="margin-top:70px;width:90px;height:90px;font-size:48px;border-radius:24px">Z</div>
+   <div class="sub" style="margin-top:16px">ZTL Engineer — Muse Spark reads · ZTL proves</div>""",
  "end": """<div class="logo">Z</div><h1>ZTL Engineer</h1>
    <div class="line">Built during the Meta Global AI Developer Hackathon: the app and the Muse Spark agent.</div>
    <div class="line">ZTL and ztl-stand: the author's earlier open-source work (Apache-2.0).</div>

@@ -127,6 +127,66 @@ def scene_pump(r: Rec):
     r.mark("end")
 
 
+def scene_borehole(r: Rec):
+    """the film's main case: a village borehole, the question in French, the first (seller's) solar pump"""
+    p = r.page
+    r.mark("start")
+    r.wait(1.2)
+    r.move("#preset")
+    p.select_option("#preset", "borehole")
+    p.dispatch_event("#preset", "change")
+    r.mark("task picked")
+    r.wait(1.2)
+    r.click("#useEx", wait_after=1.8)
+    r.mark("example + nameplate attached")
+    r.move("#text")
+    r.wait(1.5)
+    r.click("#send", wait_after=0.5)
+    r.mark("sent")
+    r.until(DONE, timeout=300)
+    r.mark("verdict")
+    r.wait(0.8)
+    r.scroll_to("#verdict")
+    r.move("#verdict")
+    r.wait(2.0)
+    r.scroll_to("#detailsCard", block="start")
+    r.move("#details .limit")
+    r.mark("range")
+    r.wait(3.0)
+    r.scroll_to("#valuesCard", block="start")
+    q = p.evaluate("(S.values.find(v => /draw/i.test(v.quantity)) || S.values[0]).quantity")
+    r.move(f'#vals input[data-q="{q}"]')
+    r.wait(2.0)
+    r.mark("end")
+
+
+def scene_borehole2(r: Rec):
+    """continues the borehole session: a second plate attached, "Et celle-ci ?" """
+    p = r.page
+    r.mark("start")
+    r.wait(1.0)
+    r.scroll_to("#text")
+    with p.expect_file_chooser() as fc:
+        r.click("#attach", wait_after=0.3)
+    fc.value.set_files(str(HERE.parent / "demo" / "nameplate-solar-sp750.png"))
+    r.wait(1.5)
+    r.mark("second plate attached")
+    r.type("#text", "Et celle-ci ?", delay=90)
+    r.wait(0.6)
+    r.click("#send", wait_after=0.5)
+    r.mark("sent")
+    r.until(DONE, timeout=300)
+    r.mark("verdict")
+    r.wait(0.8)
+    r.scroll_to("#verdict")
+    r.move("#verdict")
+    r.wait(2.0)
+    r.scroll_to("#detailsCard", block="start")
+    r.move("#details .kv")
+    r.wait(3.0)
+    r.mark("end")
+
+
 def scene_fix(r: Rec):
     """continues the pump session: the person corrects the rated head and recalculates"""
     p = r.page
@@ -284,7 +344,7 @@ const t = setInterval(() => { document.getElementById('cmd').textContent = cmd.s
 </script></body></html>"""
 
 
-SCENES = {"pump": scene_pump, "fix": scene_fix, "published": scene_published, "heavy": scene_heavy, "muhanna": scene_muhanna,
+SCENES = {"borehole": scene_borehole, "borehole2": scene_borehole2, "pump": scene_pump, "fix": scene_fix, "published": scene_published, "heavy": scene_heavy, "muhanna": scene_muhanna,
           "reproduce": scene_reproduce}
 
 
