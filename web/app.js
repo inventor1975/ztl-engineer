@@ -123,7 +123,7 @@ function render(s) {
       <td><input type="text" data-q="${esc(v.quantity)}" value="${esc(v.value)}"> <span class="muted">${esc(v.unit || "")}</span>
         ${v.read_as ? `<div class="where">read as ${esc(v.read_as)}</div>` : ""}</td>
       <td><span class="src ${clean ? "clean" : "dirty"}">${clean ? "confirmed" : "dirty"}</span>
-        <div class="where">${esc(v.from)}${v.where ? ": " + esc(v.where) : ""}</div></td>
+        <div class="where">${v.where && v.where.toLowerCase().startsWith(String(v.from).toLowerCase()) ? esc(v.where) : esc(v.from) + (v.where ? ": " + esc(v.where) : "")}</div></td>
       <td class="row-actions">${clean ? "" : `<button class="small" data-confirm="${esc(v.quantity)}">Confirm</button>`}</td></tr>`;
   }).join("");
   document.querySelectorAll("[data-confirm]").forEach((b) => b.onclick = () => confirmValue(b.dataset.confirm));
