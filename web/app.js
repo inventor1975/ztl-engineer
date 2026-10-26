@@ -250,7 +250,9 @@ function details(r, brick) {
   if (r.find && r.proved) h += `<div class="limit"><span class="muted">${r.find === "largest" ? "Largest" : "Smallest"} ${esc(r.quantity)} that works</span>
       <b>${esc(pretty(r.proved))} ${esc(r.unit || "")}</b><span class="muted">${esc(r.proved_means || "")}</span>
       ${r.beyond_is ? `<span class="muted">Just past it: ${esc(r.beyond_is)}</span>` : ""}</div>`;
-  if (r.why) h += `<p class="muted" style="font-size:13px">${esc(r.why)}</p>`;
+  const noChoice = !brick || !brick.slots || !Object.keys(brick.slots).length;
+  const why = noChoice && /^every design in the catalog violates/.test(r.why || "") ? "This design fails at a concrete point." : r.why;
+  if (why) h += `<p class="muted" style="font-size:13px">${esc(why)}</p>`;
   if (r.design && Object.keys(r.design).length) h += `<h3 style="margin-top:10px">Chosen design</h3>` +
       `<div class="kv">${Object.entries(r.design).map(([slot, d]) => `<b>${esc(slot)}</b><span>${esc(choice(d))}</span>`).join("")}</div>`;
   if (r.exact_range) h += `<h3 style="margin-top:10px">Exact worst case</h3>` + Object.entries(r.exact_range).map(([t, e]) =>
