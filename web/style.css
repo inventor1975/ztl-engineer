@@ -176,3 +176,6 @@ h3.row { display: flex; justify-content: space-between; align-items: center; }
 table.vals input.changed { border-color: var(--credit); box-shadow: 0 0 0 3px var(--credit-soft); }
 .verdict .note { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 6px; margin-top: 4px; }
 .req { font-size: 13px; padding: 6px 10px; border-radius: 8px; background: var(--bg); margin: 4px 0; }
+.downloads { font-size: 13px; margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; color: var(--muted); }
+.downloads a { text-decoration: none; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); }
+.downloads a:hover { border-color: var(--accent); }

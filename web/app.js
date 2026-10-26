@@ -146,6 +146,7 @@ function render(s0) {
                                       brick: VIEW.brick, question: VIEW.question, job: { phase: "done", log: [] } });
   // verdict
   const w = s.warranty, r = s.result || {};
+  const shownRun = old ? VIEW.n : (s.runs && s.runs.length && !running && s.result && Object.keys(s.result).length ? s.runs[s.runs.length - 1].n : null);
   if (w) {
     // the stand's verdict is the answer; where its data came from is a note under it, not a second verdict
     const v = r.verdict || w.status;
@@ -157,7 +158,10 @@ function render(s0) {
     $("verdict").innerHTML = `<span class="chip">${esc(v)}</span><span class="head">${esc(HEAD[v] || w.headline)}</span>
       ${s.question ? `<span class="why">Question: ${esc(s.question)}</span>` : ""}
       ${ai ? `<span class="note">${ai} of the values come from Muse Spark's reading of your words or files — check them
-        in the table; change any and press Recalculate.</span>` : (s.values && s.values.length ? `<span class="note">Every value is yours.</span>` : "")}`;
+        in the table; change any and press Recalculate.</span>` : (s.values && s.values.length ? `<span class="note">Every value is yours.</span>` : "")}
+      ${shownRun ? `<span class="downloads">Download: <a href="/api/session/${s.id}/run/${shownRun}/report.html" download>Report (HTML)</a>
+        <a href="/api/session/${s.id}/run/${shownRun}/results.json" download>Results (JSON)</a>
+        <a href="/api/session/${s.id}/run/${shownRun}/brick.json" download title="Re-run it on ztl-stand alone: python3 -m ustand.stand brick.json">Brick (JSON)</a></span>` : ""}`;
   } else if (running) {
     $("verdict").className = "verdict IDLE"; $("verdict").innerHTML = `<span class="chip">WORKING</span><span class="head">${PHASE[j.phase] || ""}…</span>`;
   } else if (j.phase === "error") {

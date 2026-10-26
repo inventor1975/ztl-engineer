@@ -84,7 +84,28 @@ class H(BaseHTTPRequestHandler):
                 return
             if len(parts) > 5 and parts[4] == "run" and parts[5].isdigit():
                 r = s.run_view(int(parts[5]))
-                return self._send(200, r) if r else self._send(404, {"error": "no such run"})
+                if not r:
+                    return self._send(404, {"error": "no such run"})
+                what = parts[6] if len(parts) > 6 else ""
+                if what in ("report.html", "results.json", "brick.json"):
+                    from ztl_engineer import report as RP
+                    name = f"ztl-engineer-run{r['n']}-{what}"
+                    if what == "report.html":
+                        body, ctype = RP.html_report(s, r).encode(), "text/html; charset=utf-8"
+                    elif what == "results.json":
+                        body, ctype = json.dumps(RP.bundle(s, r), ensure_ascii=False, indent=1,
+                                                 default=str).encode(), "application/json"
+                    else:
+                        body, ctype = json.dumps(r.get("brick") or {}, ensure_ascii=False, indent=1).encode(), \
+                            "application/json"
+                    self.send_response(200)
+                    self.send_header("Content-Type", ctype)
+                    self.send_header("Content-Disposition", f'attachment; filename="{name}"')
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
+                return self._send(200, r)
             return self._send(200, s.view())
         return self._send(404, {"error": "not found"})
 
