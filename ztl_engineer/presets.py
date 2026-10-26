@@ -7,6 +7,14 @@ netlist+bom (a schematic tool's SPICE export and its bill of materials), deck (a
 """
 
 PRESETS = [
+    {"id": "any", "title": "Any engineering question", "icon": "🛠️",
+     "say": "Describe the device, what it must do and the numbers you know — or ask the AI to propose reasonable "
+            "ones. It turns your words into equations, tolerances and requirements, and the stand proves the answer.",
+     "give": "Whatever you have: a photo of a label, a datasheet, a sketch with numbers, or just words.",
+     "example": "A model jet aircraft weighs 5 kg. Propose a reasonable airframe (wing area, lift coefficient, drag) "
+                "and check that a turbine with 60 N of static thrust gives a thrust-to-weight ratio of at least 1.1 "
+                "and can sustain level flight at 40 m/s.",
+     "inputs": ["photo", "pdf"]},
     {"id": "pump", "title": "Water pump — will it deliver?", "icon": "💧",
      "say": "Say what the pump must do (flow, lift height, pipe length and diameter) and ask whether this pump "
             "does it — or ask what head the pump needs.",
@@ -113,4 +121,4 @@ def by_id(pid: str) -> dict:
     for p in PRESETS:
         if p["id"] == pid:
             return p
-    return PRESETS[0]
+    return PRESETS[1]          # the pump, the app's default

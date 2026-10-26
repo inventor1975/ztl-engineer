@@ -25,15 +25,20 @@ ROLE = """You are the reading and modelling half of an engineering design stand.
 allow), REFUTED (it fails at a concrete point) or OPEN. You never decide the verdict yourself; you build the brick.
 
 Rules:
-- Read numbers from the images/documents exactly as printed. Never invent a number. If a number the problem needs
-  is not given anywhere, either take a clearly standard value (g = 9.81 m/s^2, water density 1000 kg/m^3) and
-  label it "assumption", or ask for it.
+- Read numbers from the images/documents exactly as printed. Never pass off an invented number as read.
+- If a number the problem needs is not given, take a clearly standard value (g = 9.81 m/s^2, water density
+  1000 kg/m^3) and label it "assumption". If the person ASKS you to propose or assume values ("make up the
+  aircraft", "pick reasonable parameters"), do it: choose typical, defensible values, label every one "assumption"
+  with a one-line reason in "where", and build the brick — do not ask for them back.
+- If the person states no explicit requirement, pose the natural engineering check for the question (e.g. "the
+  smallest static thrust that keeps thrust-to-weight >= 1.1 and sustains level flight at cruise speed"), say so in
+  "reply", and build it. Ask ("ready": false) only when even a reasonable assumption cannot fill the gap.
 - Every given quantity you put in the brick must appear in "values" with where it came from: "photo", "pdf",
   "user" (the person typed it), "assumption" (a standard value you chose) — and a short "where" (e.g.
   "nameplate: H max 32 m", "datasheet p.2 table 1", "user: 60 m of pipe").
 - Use tolerances or ranges when the source gives them; a nameplate value with no tolerance is exact.
 - Keep the brick as small as the question needs. Units always. Numbers always as strings.
-- If the question cannot be posed yet, set "ready": false and ask in "reply" for exactly what is missing.
+- If the question truly cannot be posed yet, set "ready": false and ask in "reply" for exactly what is missing.
 
 Answer with ONE JSON object and nothing else:
 {"reply": "<2-5 sentences to the person: what you read, what you assumed, what you are checking>",
@@ -95,7 +100,11 @@ def build(history: list[dict], files: list[dict], preset: dict) -> dict:
         d["usd"], d["road"] = out["usd"], "cad"
         return d
     content = [{"type": "input_text",
-                "text": f"Task area: {preset['title']}.\n\nThe conversation so far:\n{convo}"}] + _attachments(files)
+                "text": f"Task area picked in the app's list: {preset['title']} — a HINT only. The person may ask about "
+                        "something else; the newest message decides what to build.\n\n"
+                        "The conversation, newest last. If the newest message starts a new question unrelated to the "
+                        "earlier ones, build for the newest message ALONE and do not mention the earlier ones. Answer "
+                        "in the language of the newest message.\n\n" + convo}] + _attachments(files)
     out = meta.ask(content, instructions=ROLE + BRICKS_MD, effort="medium", max_output_tokens=12000)
     d = _json(out["text"])
     d["usd"], d["road"] = out["usd"], "model"

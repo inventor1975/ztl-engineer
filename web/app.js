@@ -32,6 +32,7 @@ function showHint(p) {
 async function init() {
   PRESETS = await api("/api/presets");
   $("preset").innerHTML = PRESETS.map((p) => `<option value="${p.id}">${p.icon}  ${esc(p.title)}</option>`).join("");
+  $("preset").value = "pump";                // the default task (curator): the pump, first among the examples
   $("preset").onchange = () => showHint(PRESETS.find((p) => p.id === $("preset").value));
   // the session survives going to Help and back, and a server restart: its id is kept in this browser
   let sid = null;
