@@ -4,6 +4,7 @@
  "fix": "Suppose you check the real pump, and its rated head is twenty-one metres, not twenty-four. Change it, and press Recalculate. Now it is refuted: at two litres per second the pipe needs twenty-one and a half metres, and the pump gives only twenty-one.",
  "published": "Can it catch real mistakes? A Texas Instruments datasheet picks a forty-nine point nine kilo-ohm resistor to guarantee a one-amp current limit. Counting the resistor's own one percent tolerance, the stand refutes that choice, and finds the largest value that truly guarantees it: forty-nine point four seven kilo-ohms.",
  "heavy": "It scales. A thirty-six metre bridge girder: over thirty-two thousand designs, ninety-one requirements, every load with its tolerance. Sixteen cores, about thirteen minutes, sped up here. Earned, and proved optimal: the lightest steel that meets every requirement.",
+ "muhanna": "Harder still: a published benchmark. A twenty-floor truss, a hundred and one bars, each bar's stiffness within half a percent: two to the hundred and first combinations. No sampling. The stand proves the exact range of the top corner's movement, both ends reached and never exceeded.",
  "reproduce": "Every run downloads as a report, and as the stand's own problem file. Run that file on the open-source stand alone — no AI, no app — and you get the same verdict. The AI reads; the proof does not depend on it.",
  "end": "Built during this hackathon: the app and the Muse Spark agent. ZTL and the stand are the author's earlier open-source work. ZTL Engineer."
 }

@@ -178,7 +178,7 @@ PRESETS += [
      "example": "With every bar's modulus ±0.5 %, what is the proved range of node 42's horizontal and vertical "
                 "displacement?",
      "demo": ["stand:examples/truss/cantilever20.txt"],
-     "note": "Heavy: about 13 minutes (measured 758 s). Each end of each range is its own proof — three stand runs "
+     "note": "Heavy: 11–13 minutes (measured 635 s and 758 s). Each end of each range is its own proof — three stand runs "
              "of about 3 minutes each, which do not split further — so the four ends run side by side on 4 cores. "
              "The answer is the exact range: both ends are attained by a real corner and proved not to be exceeded.",
      "inputs": ["deck"]},
