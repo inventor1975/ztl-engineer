@@ -27,30 +27,30 @@
       is checking. If something is missing, it asks.</li>
     <li><b>Watch the stand work.</b> The bar shows the stand's own count of designs decided; when there is nothing
       to count (one fixed design being proved), it shows the phase and the time.</li>
-    <li><b>Confirm the values.</b> Every number the model read is <span class="src dirty">dirty</span> until you
-      confirm it. Correct any misread value and press Enter — the stand judges again with your number.</li>
+    <li><b>Check the values.</b> The table on the right lists every number the answer rests on and where it came
+      from — <span class="src" style="background:var(--dirty-soft);color:var(--dirty)">AI read</span> from your words
+      or files, or <span class="src clean">yours</span>. Change any value (a range as <i>0 to 60</i>) and press
+      <b>Recalculate</b>: the stand judges again with your numbers, and the run is added to the list.</li>
   </ol>
 
   <h2>What the verdicts mean</h2>
   <table>
     <tr><th>Verdict</th><th>Meaning</th></tr>
     <tr><td><span class="src clean">EARNED</span></td><td>The design meets every requirement for <i>every</i> value
-      the tolerances allow — proved, not sampled — and every value it rests on was confirmed by a person.</td></tr>
-    <tr><td><span class="src" style="background:var(--credit-soft);color:var(--credit)">ON CREDIT</span></td><td>The
-      design holds for the values <i>as the model read them</i>, but some are still dirty. A misread digit on a
-      nameplate is exactly what no proof downstream can catch — so the stand will not vouch until you confirm.</td></tr>
+      the tolerances allow — proved, not sampled.</td></tr>
     <tr><td><span class="src" style="background:var(--refuted-soft);color:var(--refuted)">REFUTED</span></td><td>The
       design fails at a concrete point, shown under <i>Where it fails</i>. When several requirements cannot hold
       together, the stand names the smallest sets of them that conflict — change one set as a whole.</td></tr>
     <tr><td><span class="src" style="background:var(--open-soft);color:var(--open)">OPEN</span></td><td>The stand
-      could not decide either way within its limits. It does not guess.</td></tr>
+      could not decide either way within its limits. It does not guess. (Before showing OPEN, Muse Spark rewrites
+      the problem once — same numbers — in a form the stand can decide better.)</td></tr>
   </table>
 
-  <h2>Why "dirty"?</h2>
-  <p>The stand runs on ZTL, a zero-trust logic: a value that is not ours — here, a number a model read off an image —
-    is a <i>dirty</i> parameter. Its source may be wrong, and nothing built on it may be counted as true until it is
-    cleaned. A person's confirmation is that cleaning. The verdict card shows the exact ZTL formula: the stand's
-    result AND each value; one dirty value and the whole claim is not earned.</p>
+  <h2>Why it says where each value came from</h2>
+  <p>A proof is only as good as its data. The stand proves the design for the numbers it is given; a digit the model
+    misread on a nameplate is exactly what no proof downstream can catch. So every value is labelled by its source,
+    and the verdict notes how many came from the model's reading. This is the zero-trust idea of ZTL, the logic
+    under the stand: a value that is not ours is not counted as known until someone who can check it does.</p>
 
   <h2>Files the stand reads</h2>
   <table>

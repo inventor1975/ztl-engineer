@@ -29,7 +29,7 @@ def _chain(atoms):
 
 def judge(verdict: str, values: list[dict]) -> dict:
     """values: [{"quantity", "from", "confirmed": bool}]. Returns the warranty the page shows."""
-    dirty = [v["quantity"] for v in values if not v.get("confirmed") and v.get("from") not in ("file",)]
+    dirty = [v["quantity"] for v in values if not v.get("confirmed") and v.get("from") not in ("file", "you")]
     env, atoms = {}, []
     if verdict in ("EARNED", "REFUTED"):
         # `stand` = "the stand's verdict, as stated, is proved" — T for a proof that the design holds AND for a

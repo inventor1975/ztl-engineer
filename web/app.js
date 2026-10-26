@@ -134,7 +134,7 @@ function render(s0) {
   $("runsCard").hidden = !(s.runs && s.runs.length);
   $("runs").innerHTML = (s.runs || []).slice().reverse().map((x) => `<li class="${VIEW && VIEW.n === x.n ? "on" : ""}" data-run="${x.n}">
       <span class="rn">#${x.n}</span><span class="rq">${esc(x.question || "")}</span>
-      <span class="rs ${chipClass(x.status || x.verdict || "")}">${esc(x.status || x.verdict || "")}</span><span class="rt">${esc(x.at)}</span></li>`).join("");
+      <span class="rs ${chipClass(x.verdict || "")}">${esc(x.verdict || "")}</span><span class="rt">${esc(x.at)}</span></li>`).join("");
   document.querySelectorAll("[data-run]").forEach((li) => li.onclick = () => openRun(+li.dataset.run));
   const latest = s.runs && s.runs.length ? s.runs[s.runs.length - 1].n : null;
   const old = VIEW && VIEW.n !== latest;
@@ -146,12 +146,17 @@ function render(s0) {
   // verdict
   const w = s.warranty, r = s.result || {};
   if (w) {
-    const cls = chipClass(w.status);
-    $("verdict").className = `verdict ${cls}`;
-    $("verdict").innerHTML = `<span class="chip">${esc(w.status)}</span><span class="head">${esc(w.headline)}</span>
+    // the stand's verdict is the answer; where its data came from is a note under it, not a second verdict
+    const v = r.verdict || w.status;
+    const HEAD = { EARNED: "Proved: the design holds for every value the tolerances allow.",
+                   REFUTED: "Refuted: the design fails at a concrete point — see Details.",
+                   OPEN: "Undecided: the stand could not prove it either way, and does not guess." };
+    const ai = (s.values || []).filter((x) => x.from !== "file" && x.from !== "you").length;
+    $("verdict").className = `verdict ${chipClass(v)}`;
+    $("verdict").innerHTML = `<span class="chip">${esc(v)}</span><span class="head">${esc(HEAD[v] || w.headline)}</span>
       ${s.question ? `<span class="why">Question: ${esc(s.question)}</span>` : ""}
-      ${w.dirty && w.dirty.length ? `<span class="why">Rests on dirty values: <b>${w.dirty.map(esc).join(", ")}</b></span>` : ""}
-      ${w.formula ? `<span class="why">ZTL: ${esc(w.formula)} = ${esc(w.ztl_value)}</span>` : ""}`;
+      ${ai ? `<span class="note">${ai} of the values come from Muse Spark's reading of your words or files — check them
+        in the table; change any and press Recalculate.</span>` : (s.values && s.values.length ? `<span class="note">Every value is yours.</span>` : "")}`;
   } else if (running) {
     $("verdict").className = "verdict IDLE"; $("verdict").innerHTML = `<span class="chip">WORKING</span><span class="head">${PHASE[j.phase] || ""}…</span>`;
   } else if (j.phase === "error") {
@@ -162,7 +167,7 @@ function render(s0) {
   }
   // values
   $("valuesCard").hidden = !s.values.length;
-  $("confirmAll").hidden = !!old;
+  $("recalc").hidden = !!old;
   const Q = (s.brick && s.brick.quantities) || {};
   const tolOf = (q) => {          // what is confirmed is the whole specification: the value AND its tolerance
     const b = Q[q] || {};
@@ -174,15 +179,21 @@ function render(s0) {
   };
   $("vals").innerHTML = s.values.map((v) => {
     const clean = v.confirmed || v.from === "file";
+    const yours = v.from === "file" || v.from === "you";
     return `<tr><td class="q">${esc(v.quantity)}</td>
-      <td><input type="text" data-q="${esc(v.quantity)}" value="${esc(v.value)}"> <span class="muted">${esc(v.unit || "")}</span>${tolOf(v.quantity) ? ` <span class="tol">${esc(tolOf(v.quantity))}</span>` : ""}
-        ${v.read_as ? `<div class="where">read as ${esc(v.read_as)}</div>` : ""}</td>
-      <td><span class="src ${clean ? "clean" : "dirty"}">${clean ? "confirmed" : "dirty"}</span>
-        <div class="where">${v.where && v.where.toLowerCase().startsWith(String(v.from).toLowerCase()) ? esc(v.where) : esc(v.from) + (v.where ? ": " + esc(v.where) : "")}</div></td>
-      <td class="row-actions">${clean || old ? "" : `<button class="small" data-confirm="${esc(v.quantity)}">Confirm</button>`}</td></tr>`;
+      <td><input type="text" data-q="${esc(v.quantity)}" data-orig="${esc(v.value)}" value="${esc(v.value)}" ${old ? "disabled" : ""}> <span class="muted">${esc(v.unit || "")}</span>${tolOf(v.quantity) ? ` <span class="tol">${esc(tolOf(v.quantity))}</span>` : ""}
+        ${v.read_as ? `<div class="where">AI read ${esc(v.read_as)}</div>` : ""}</td>
+      <td><span class="src ${yours ? "you" : "ai"}">${yours ? "yours" : "AI read"}</span>
+        <div class="where">${v.where && v.where.toLowerCase().startsWith(String(v.from).toLowerCase()) ? esc(v.where) : esc(v.from) + (v.where ? ": " + esc(v.where) : "")}</div></td><td></td></tr>`;
   }).join("");
-  document.querySelectorAll("[data-confirm]").forEach((b) => b.onclick = () => confirmValue(b.dataset.confirm));
-  document.querySelectorAll("#vals input").forEach((inp) => inp.onkeydown = (e) => { if (e.key === "Enter") confirmValue(inp.dataset.q); });
+  const markChanged = () => {
+    let any = false;
+    document.querySelectorAll("#vals input").forEach((inp) => { const c = inp.value.trim() !== inp.dataset.orig; inp.classList.toggle("changed", c); any = any || c; });
+    $("recalc").disabled = !any || running;
+  };
+  document.querySelectorAll("#vals input").forEach((inp) => { inp.oninput = markChanged;
+    inp.onkeydown = (e) => { if (e.key === "Enter" && !$("recalc").disabled) recalc(); }; });
+  markChanged();
   // details
   $("detailsCard").hidden = !s.result || !Object.keys(r).length;
   $("details").innerHTML = details(r);
@@ -235,11 +246,12 @@ function details(r) {
   return h;
 }
 
-async function confirmValue(q) {
-  const inp = document.querySelector(`#vals input[data-q="${CSS.escape(q)}"]`);
-  try { S = await api(`/api/session/${S.id}/confirm`, { quantity: q, value: inp ? inp.value : null }); render(S); poll(); }
+async function recalc() {
+  const changes = {};
+  document.querySelectorAll("#vals input").forEach((inp) => { if (inp.value.trim() !== inp.dataset.orig) changes[inp.dataset.q] = inp.value.trim(); });
+  try { S = await api(`/api/session/${S.id}/recalc`, { changes }); render(S); poll(); }
   catch (e) { alert(e.message); }
 }
-$("confirmAll").onclick = async () => { S = await api(`/api/session/${S.id}/confirm_all`, {}); render(S); };
+$("recalc").onclick = recalc;
 
 init();

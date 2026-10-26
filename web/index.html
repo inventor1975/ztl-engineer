@@ -42,15 +42,7 @@
       </div>
       <div class="dropveil" id="dropveil">Drop the file here — a nameplate photo, a datasheet PDF,<br>a SPICE netlist + BOM, or a truss deck</div>
     </div>
-  </section>
-
-  <!-- right: verdict, progress, values, details -->
-  <section class="col-right">
-    <div class="card" id="runsCard" hidden>
-      <h3>Runs in this session</h3>
-      <ul class="runs" id="runs"></ul>
-    </div>
-    <div class="card">
+    <div class="card verdictCard">
       <div class="viewing" id="viewing" hidden></div>
       <h3>Verdict</h3>
       <div class="verdict IDLE" id="verdict"><span class="chip">WAITING</span>
@@ -61,13 +53,22 @@
         <ul class="log" id="log"></ul>
       </div>
     </div>
+
+  </section>
+
+  <!-- right: verdict, progress, values, details -->
+  <section class="col-right">
+    <div class="card" id="runsCard" hidden>
+      <h3>Runs in this session</h3>
+      <ul class="runs" id="runs"></ul>
+    </div>
     <div class="card" id="valuesCard" hidden>
       <h3>Values the answer rests on</h3>
-      <p class="muted" style="margin:0 0 8px;font-size:13px">Values read by the model are <span class="src dirty">dirty</span>
-        until you confirm them. Correct any misread value — the stand will judge again.</p>
+      <p class="muted" style="margin:0 0 8px;font-size:13px">Check what Muse Spark read. Change any value and press
+        <b>Recalculate</b> — the stand judges again with your numbers.</p>
       <table class="vals"><thead><tr><th>Quantity</th><th>Value</th><th>Source</th><th></th></tr></thead>
         <tbody id="vals"></tbody></table>
-      <button class="ghost small" id="confirmAll" style="margin-top:10px">Confirm all</button>
+      <button id="recalc" style="margin-top:10px" disabled>Recalculate</button>
     </div>
     <div class="card" id="detailsCard" hidden>
       <h3>Details</h3>

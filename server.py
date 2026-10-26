@@ -118,6 +118,9 @@ class H(BaseHTTPRequestHandler):
             if action == "confirm":
                 s.confirm(d["quantity"], d.get("value"))
                 return self._send(200, s.view())
+            if action == "recalc":
+                s.recalc(d.get("changes") or {})
+                return self._send(200, s.view())
             if action == "confirm_all":
                 s.confirm_all()
                 return self._send(200, s.view())

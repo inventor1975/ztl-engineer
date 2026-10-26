@@ -173,6 +173,32 @@ class Session:
             self.warranty = warranty.judge(self.result.get("verdict", ""), self.values)
             self._sync_last_run()
 
+    def recalc(self, changes: dict):
+        """The person edited values in the table and pressed Recalculate: their numbers replace the model's reading
+        (the model's is kept as read_as), they become the person's own data (from: "you"), and the stand judges
+        again. A value written "[a, b]" or "a .. b" is a range; a single number keeps the quantity's tolerance."""
+        import re
+        if not changes:
+            return
+        for v in self.values:
+            new = changes.get(v["quantity"])
+            if new is None or not str(new).strip() or str(new).strip() == str(v["value"]):
+                continue
+            new = str(new).strip()
+            v["read_as"] = v.get("read_as", v["value"])
+            v["value"], v["from"], v["confirmed"] = new, "you", True
+            q = (self.brick or {}).get("quantities", {}).get(v["quantity"])
+            if q is None:
+                continue
+            m = re.match(r"^\[?\s*(-?[\d.eE+-]+)\s*(?:,|\.\.|…|\bto\b)\s*(-?[\d.eE+-]+)\s*\]?$", new)
+            if m:
+                q.pop("value", None); q.pop("tolerance", None)
+                q["range"] = [m.group(1), m.group(2)]
+            else:
+                q.pop("range", None)
+                q["value"] = new
+        self._start(self._rejudge)
+
     def confirm_all(self):
         for v in self.values:
             v["confirmed"] = True
