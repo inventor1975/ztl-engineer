@@ -269,6 +269,8 @@ function details(r, brick) {
   const noChoice = !brick || !brick.slots || !Object.keys(brick.slots).length;
   const why = noChoice && /^every design in the catalog violates/.test(r.why || "") ? "This design fails at a concrete point." : r.why;
   if (why) h += `<p class="muted" style="font-size:13px">${esc(why)}</p>`;
+  if (r.objective && r.objective.value !== undefined) h += `<div class="limit"><span class="muted">${r.objective.optimal ? "Optimal" : "Best found"}: ${esc(r.objective.minimize ? "minimize " + r.objective.minimize : "")}</span>
+      <b>${esc(pretty(r.objective.value))} ${esc(r.objective.unit || "")}</b><span class="muted">${esc(r.objective.note || "")}</span></div>`;
   if (r.design && Object.keys(r.design).length) h += `<h3 style="margin-top:10px">Chosen design</h3>` +
       `<div class="kv">${Object.entries(r.design).map(([slot, d]) => `<b>${esc(slot)}</b><span>${esc(choice(d))}</span>`).join("")}</div>`;
   if (r.exact_range) h += `<h3 style="margin-top:10px">Exact worst case</h3>` + Object.entries(r.exact_range).map(([t, e]) =>

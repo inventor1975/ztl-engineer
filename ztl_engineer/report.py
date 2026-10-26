@@ -108,6 +108,11 @@ def html_report(session, run: dict) -> str:
             f"{H(_approx((e.get('max') or {}).get('value')))}<br><small>min at {H(_approx((e.get('min') or {}).get('at') or {}))}"
             f"; max at {H(_approx((e.get('max') or {}).get('at') or {}))}</small></p>"
             for t, e in r["exact_range"].items() if not e.get("error")))
+    ob = r.get("objective") or {}
+    if ob.get("value") is not None:
+        sec("Optimal" if ob.get("optimal") else "Best found",
+            f"<p class='big'>{H(_approx(ob['value']))} {H(ob.get('unit', ''))}</p><p>minimize {H(ob.get('minimize', ''))}"
+            f" — {H(ob.get('note', ''))}</p>")
     if r.get("design"):
         sec("Chosen design", kv({k: _choice(v) for k, v in r["design"].items()}))
     if r.get("guaranteed"):
