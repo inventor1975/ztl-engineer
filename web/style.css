@@ -168,3 +168,4 @@ h3.row { display: flex; justify-content: space-between; align-items: center; }
        color: inherit; border: 1px solid rgba(255,255,255,.35); }
 .msg.assistant .att { background: var(--accent-soft); border-color: var(--line); }
 .att:hover { filter: brightness(1.1); text-decoration: underline; }
+.tol { font-size: 12px; font-weight: 700; color: var(--accent); white-space: nowrap; }

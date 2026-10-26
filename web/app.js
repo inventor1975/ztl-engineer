@@ -163,10 +163,19 @@ function render(s0) {
   // values
   $("valuesCard").hidden = !s.values.length;
   $("confirmAll").hidden = !!old;
+  const Q = (s.brick && s.brick.quantities) || {};
+  const tolOf = (q) => {          // what is confirmed is the whole specification: the value AND its tolerance
+    const b = Q[q] || {};
+    if (b.tolerance !== undefined) {
+      const t = Number(b.tolerance);
+      return isNaN(t) ? `± ${b.tolerance}` : `± ${+(t * 100).toPrecision(4)}%`;
+    }
+    return "";
+  };
   $("vals").innerHTML = s.values.map((v) => {
     const clean = v.confirmed || v.from === "file";
     return `<tr><td class="q">${esc(v.quantity)}</td>
-      <td><input type="text" data-q="${esc(v.quantity)}" value="${esc(v.value)}"> <span class="muted">${esc(v.unit || "")}</span>
+      <td><input type="text" data-q="${esc(v.quantity)}" value="${esc(v.value)}"> <span class="muted">${esc(v.unit || "")}</span>${tolOf(v.quantity) ? ` <span class="tol">${esc(tolOf(v.quantity))}</span>` : ""}
         ${v.read_as ? `<div class="where">read as ${esc(v.read_as)}</div>` : ""}</td>
       <td><span class="src ${clean ? "clean" : "dirty"}">${clean ? "confirmed" : "dirty"}</span>
         <div class="where">${v.where && v.where.toLowerCase().startsWith(String(v.from).toLowerCase()) ? esc(v.where) : esc(v.from) + (v.where ? ": " + esc(v.where) : "")}</div></td>
