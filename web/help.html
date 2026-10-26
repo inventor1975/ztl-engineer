@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Help — Zero-Trust Engineer</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="logo">Z</div>Zero-Trust Engineer <small>Muse Spark reads · ZTL proves</small></div>
+  <nav class="links"><a href="/">Stand</a><a href="/help" class="on">Help</a></nav>
+</header>
+<div class="doc">
+  <h1>How to use the stand</h1>
+  <p class="lead">You describe an engineering question in plain words; Muse Spark turns it — together with any photo,
+    datasheet or CAD file you give it — into a precise problem; the ZTL stand <b>proves</b> the answer, or proves it
+    wrong, or says honestly that it cannot vouch for it.</p>
+
+  <h2>In five steps</h2>
+  <ol class="steps">
+    <li><b>Pick a task</b> from the list on the left. The card under it says what to tell the AI and what to give
+      it. <i>Use this example</i> fills in a ready question.</li>
+    <li><b>Add files</b> if you have them: a photo of a nameplate or a label, a datasheet PDF, or your CAD export
+      (see below). Drag them onto the box or click it.</li>
+    <li><b>Ask</b> in the conversation: what must the design do? Muse Spark answers with what it read and what it
+      is checking. If something is missing, it asks.</li>
+    <li><b>Watch the stand work.</b> The bar shows the stand's own count of designs decided; when there is nothing
+      to count (one fixed design being proved), it shows the phase and the time.</li>
+    <li><b>Confirm the values.</b> Every number the model read is <span class="src dirty">dirty</span> until you
+      confirm it. Correct any misread value and press Enter — the stand judges again with your number.</li>
+  </ol>
+
+  <h2>What the verdicts mean</h2>
+  <table>
+    <tr><th>Verdict</th><th>Meaning</th></tr>
+    <tr><td><span class="src clean">EARNED</span></td><td>The design meets every requirement for <i>every</i> value
+      the tolerances allow — proved, not sampled — and every value it rests on was confirmed by a person.</td></tr>
+    <tr><td><span class="src" style="background:var(--credit-soft);color:var(--credit)">ON CREDIT</span></td><td>The
+      design holds for the values <i>as the model read them</i>, but some are still dirty. A misread digit on a
+      nameplate is exactly what no proof downstream can catch — so the stand will not vouch until you confirm.</td></tr>
+    <tr><td><span class="src" style="background:var(--refuted-soft);color:var(--refuted)">REFUTED</span></td><td>The
+      design fails at a concrete point, shown under <i>Where it fails</i>. When several requirements cannot hold
+      together, the stand names the smallest sets of them that conflict — change one set as a whole.</td></tr>
+    <tr><td><span class="src" style="background:var(--open-soft);color:var(--open)">OPEN</span></td><td>The stand
+      could not decide either way within its limits. It does not guess.</td></tr>
+  </table>
+
+  <h2>Why "dirty"?</h2>
+  <p>The stand runs on ZTL, a zero-trust logic: a value that is not ours — here, a number a model read off an image —
+    is a <i>dirty</i> parameter. Its source may be wrong, and nothing built on it may be counted as true until it is
+    cleaned. A person's confirmation is that cleaning. The verdict card shows the exact ZTL formula: the stand's
+    result AND each value; one dirty value and the whole claim is not earned.</p>
+
+  <h2>Files the stand reads</h2>
+  <table>
+    <tr><th>File</th><th>What happens</th></tr>
+    <tr><td>Photo (JPG, PNG, WebP)</td><td>Muse Spark reads the numbers on it — nameplates, labels, tables.</td></tr>
+    <tr><td>PDF</td><td>Its first pages are read as images: datasheets, manuals, catalogue pages.</td></tr>
+    <tr><td>SPICE netlist (.cir) + BOM (.csv)</td><td>Exported by KiCad, Altium, OrCAD and others. The stand imports
+      the circuit itself; the BOM's tolerance column sets each part's spread. You only say what must hold.
+      DC, linear elements (R, V, I, E, G, F, H; L and C at DC).</td></tr>
+    <tr><td>ANSYS truss deck (.txt)</td><td>A plane truss (N, E, MP EX, R, D, F lines). Say the modulus tolerance
+      and the deflection limit.</td></tr>
+    <tr><td>Brick (.json)</td><td>A problem already in the stand's own format — sent as it is.</td></tr>
+  </table>
+  <p class="muted">Not read: mechanical CAD geometry (STEP, DXF, IGES). The stand proves equations and networks, not
+    shapes.</p>
+
+  <h2>Cost</h2>
+  <p>Each question costs a few cents of Meta Model API usage. The app keeps its own running total and stops
+    itself before a hard cap — shown at the top right.</p>
+
+  <h2>What is behind it</h2>
+  <p>Muse Spark 1.3 (Meta Model API) reads and models. The proofs come from
+    <a href="https://github.com/inventor1975/ztl-stand">ztl-stand</a> on
+    <a href="https://github.com/inventor1975/ZTL">ZTL — Zero-Trust Logic</a>, both by Vitaly Reznik.</p>
+</div>
+</body>
+</html>

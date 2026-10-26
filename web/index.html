@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zero-Trust Engineer</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="logo">Z</div>Zero-Trust Engineer <small>Muse Spark reads · ZTL proves</small></div>
+  <nav class="links">
+    <a href="/" class="on">Stand</a>
+    <a href="/help">Help</a>
+    <span class="spend" id="spend" title="Spent on the Meta Model API, of the hard cap">$0.00</span>
+  </nav>
+</header>
+
+<main class="grid">
+  <!-- left: task, hint, files -->
+  <section class="col-left">
+    <div class="card">
+      <h3>Task</h3>
+      <select id="preset"></select>
+      <div class="hint" id="hint"></div>
+    </div>
+    <div class="card">
+      <h3>Files</h3>
+      <div class="drop" id="drop">Drop a nameplate photo, a datasheet PDF,<br>a SPICE netlist + BOM, or a truss deck<br>
+        <small>or click to choose</small></div>
+      <input type="file" id="picker" multiple hidden>
+      <ul class="files" id="files"></ul>
+    </div>
+  </section>
+
+  <!-- middle: chat -->
+  <section class="col-mid">
+    <div class="card chat">
+      <h3>Conversation</h3>
+      <div class="empty" id="empty">Pick a task, add a photo or a document if you have one, and say what you
+        need. Muse Spark turns it into a precise engineering problem; the ZTL stand proves the answer.</div>
+      <div class="msgs" id="msgs"></div>
+      <div class="composer">
+        <textarea id="text" placeholder="What do you need? e.g. Will this pump lift 2 L/s to 20 m?"></textarea>
+        <button id="send">Send</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- right: verdict, progress, values, details -->
+  <section class="col-right">
+    <div class="card">
+      <h3>Verdict</h3>
+      <div class="verdict IDLE" id="verdict"><span class="chip">WAITING</span>
+        <span class="head">No question yet.</span></div>
+      <div class="progress" id="progress" hidden>
+        <div class="bar" id="bar"><i style="width:0%"></i></div>
+        <div class="pmeta"><span id="phase"></span><span id="pcount"></span></div>
+        <ul class="log" id="log"></ul>
+      </div>
+    </div>
+    <div class="card" id="valuesCard" hidden>
+      <h3>Values the answer rests on</h3>
+      <p class="muted" style="margin:0 0 8px;font-size:13px">Values read by the model are <span class="src dirty">dirty</span>
+        until you confirm them. Correct any misread value — the stand will judge again.</p>
+      <table class="vals"><thead><tr><th>Quantity</th><th>Value</th><th>Source</th><th></th></tr></thead>
+        <tbody id="vals"></tbody></table>
+      <button class="ghost small" id="confirmAll" style="margin-top:10px">Confirm all</button>
+    </div>
+    <div class="card" id="detailsCard" hidden>
+      <h3>Details</h3>
+      <div id="details"></div>
+      <details><summary>The brick sent to the stand</summary><pre class="json" id="brick"></pre></details>
+      <details><summary>The stand's full answer</summary><pre class="json" id="raw"></pre></details>
+    </div>
+  </section>
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>
