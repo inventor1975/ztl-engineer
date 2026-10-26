@@ -121,7 +121,13 @@ def ask(content: list[dict] | str, *, instructions: str | None = None, effort: s
         with urllib.request.urlopen(req, timeout=300) as r:
             d = json.loads(r.read())
     except urllib.error.HTTPError as e:
-        raise ModelError(f"Meta Model API {e.code}: {e.read().decode()[:300]}") from None
+        body = e.read().decode()[:600]
+        if "content_policy_violation" in body:
+            # Meta's moderation refused the request (measured 26.10: a model-jet thrust question). Not ours to work
+            # around; the person is told plainly and can rephrase.
+            raise ModelError("Meta's content filter declined this request. Please rephrase it in plain engineering "
+                             "terms.") from None
+        raise ModelError(f"Meta Model API {e.code}: {body[:300]}") from None
     usage = d.get("usage") or {}
     usd = price(usage, model)
     with _LOCK:

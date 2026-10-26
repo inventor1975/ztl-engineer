@@ -229,9 +229,8 @@ class Session:
             self.job["phase"] = "error"
             self.job["error"] = str(e)
         except Exception as e:          # noqa: BLE001 — shown to the person, never swallowed
-            self._log(f"{type(e).__name__}: {e}")
             self.job["phase"] = "error"
-            self.job["error"] = f"{type(e).__name__}: {e}"
+            self.job["error"] = str(e) if isinstance(e, meta.ModelError) else f"{type(e).__name__}: {e}"
             self.job["trace"] = traceback.format_exc()[-1500:]
         self.job["elapsed"] = round(time.time() - self.job["t0"], 1)
         self.save()
