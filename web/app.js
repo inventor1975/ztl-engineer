@@ -211,6 +211,23 @@ function pretty(v) {
 }
 const fmt = (x) => (typeof x === "number" ? (Math.abs(x) >= 1000 || Math.abs(x) < 0.01 ? x.toPrecision(5) : x.toFixed(4).replace(/0+$/, "").replace(/\.$/, "")) : String(x ?? "—"));
 const pts = (at) => at ? Object.entries(at).map(([k, v]) => `${k}=${pretty(v)}`).join(", ") : "—";
+// a design choice as people read it: {"catalog":"res_1pct","R":{"nominal":"1000","tolerance":"1/100"}} -> "R 1000 ±1% (res_1pct)"
+function choice(d) {
+  if (d === null || typeof d !== "object") return pretty(d);
+  const parts = [];
+  let cat = "", item = "";
+  for (const [k, v] of Object.entries(d)) {
+    if (k === "catalog") { cat = String(v); continue; }
+    if (["item", "name", "part", "id"].includes(k)) { item = String(v); continue; }
+    if (v && typeof v === "object" && "nominal" in v) {
+      const t = v.tolerance !== undefined ? Number(String(v.tolerance).split(" ")[0].split("/").reduce((a, b) => a / b)) : null;
+      parts.push(`${k} ${pretty(v.nominal)}${t ? ` ±${+(t * 100).toPrecision(3)}%` : ""}`);
+    } else if (v && typeof v === "object" && ("min" in v || "max" in v)) {
+      parts.push(`${k} ${pretty(v.min)} … ${pretty(v.max)}`);
+    } else parts.push(`${k} ${pretty(v)}`);
+  }
+  return [item, parts.join(", "), cat ? `(${cat})` : ""].filter(Boolean).join(" ");
+}
 function chipClass(st) {
   return st === "EARNED" ? "EARNED" : st === "REFUTED" ? "REFUTED" : String(st).includes("CREDIT") ? "CREDIT" : "OPEN";
 }
@@ -229,7 +246,8 @@ function details(r, brick) {
       <b>${esc(pretty(r.proved))} ${esc(r.unit || "")}</b><span class="muted">${esc(r.proved_means || "")}</span>
       ${r.beyond_is ? `<span class="muted">Just past it: ${esc(r.beyond_is)}</span>` : ""}</div>`;
   if (r.why) h += `<p class="muted" style="font-size:13px">${esc(r.why)}</p>`;
-  if (r.design && Object.keys(r.design).length) h += `<h3 style="margin-top:10px">Chosen design</h3>${kv(r.design)}`;
+  if (r.design && Object.keys(r.design).length) h += `<h3 style="margin-top:10px">Chosen design</h3>` +
+      `<div class="kv">${Object.entries(r.design).map(([slot, d]) => `<b>${esc(slot)}</b><span>${esc(choice(d))}</span>`).join("")}</div>`;
   if (r.exact_range) h += `<h3 style="margin-top:10px">Exact worst case</h3>` + Object.entries(r.exact_range).map(([t, e]) =>
       e.error ? `<p class="muted">${esc(t)}: ${esc(e.error)}</p>` :
       `<div class="limit"><span class="muted">${esc(t)} over every tolerance</span><b>${esc(fmt(e.min && e.min.approx))} … ${esc(fmt(e.max && e.max.approx))}</b>
