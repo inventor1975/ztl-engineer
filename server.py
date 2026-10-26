@@ -66,8 +66,14 @@ class H(BaseHTTPRequestHandler):
         if p == "/api/spend":
             return self._send(200, meta.spent() | {"cap": meta.CAP_USD})
         if p.startswith("/api/session/"):
-            s = SS.SESSIONS.get(p.split("/")[3])
-            return self._send(200, s.view()) if s else self._send(404, {"error": "no such session"})
+            parts = p.split("/")
+            s = SS.get(parts[3])
+            if not s:
+                return self._send(404, {"error": "no such session"})
+            if len(parts) > 5 and parts[4] == "run" and parts[5].isdigit():
+                r = s.run_view(int(parts[5]))
+                return self._send(200, r) if r else self._send(404, {"error": "no such run"})
+            return self._send(200, s.view())
         return self._send(404, {"error": "not found"})
 
     def _file(self, f: pathlib.Path):
@@ -84,7 +90,7 @@ class H(BaseHTTPRequestHandler):
                 s = SS.new(d.get("preset") or "pump")
                 return self._send(200, s.view())
             parts = p.split("/")
-            s = SS.SESSIONS.get(parts[3]) if len(parts) > 4 else None
+            s = SS.get(parts[3]) if len(parts) > 4 else None
             if not s:
                 return self._send(404, {"error": "no such session"})
             action = parts[4]

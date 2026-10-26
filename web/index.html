@@ -29,7 +29,7 @@
   <!-- middle: chat -->
   <section class="col-mid">
     <div class="card chat">
-      <h3>Conversation</h3>
+      <h3 class="row">Conversation <button class="ghost small" id="newSession" title="Start a new conversation">New</button></h3>
       <div class="empty" id="empty">Pick a task, add a photo or a document if you have one, and say what you
         need. Muse Spark turns it into a precise engineering problem; the ZTL stand proves the answer.</div>
       <div class="msgs" id="msgs"></div>
@@ -46,7 +46,12 @@
 
   <!-- right: verdict, progress, values, details -->
   <section class="col-right">
+    <div class="card" id="runsCard" hidden>
+      <h3>Runs in this session</h3>
+      <ul class="runs" id="runs"></ul>
+    </div>
     <div class="card">
+      <div class="viewing" id="viewing" hidden></div>
       <h3>Verdict</h3>
       <div class="verdict IDLE" id="verdict"><span class="chip">WAITING</span>
         <span class="head">No question yet.</span></div>

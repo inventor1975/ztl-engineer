@@ -8,6 +8,9 @@ a confirmation changes the warranty alone; a corrected value changes the brick, 
 from __future__ import annotations
 
 import copy
+import json
+import os
+import pathlib
 import threading
 import time
 import traceback
@@ -17,6 +20,9 @@ from . import agent, meta, presets, runner, warranty
 from ustand import spice as SPICE, truss as TRUSS  # noqa: E402  (pre-existing importers of ztl-stand)
 
 SESSIONS: dict[str, "Session"] = {}
+# sessions survive a server restart: each is saved under runs/<id>/ (files beside it), gitignored
+STORE = pathlib.Path(os.environ.get("ZTL_ENGINEER_RUNS", pathlib.Path(__file__).resolve().parent.parent / "runs"))
+_SAVED = ("preset_id", "history", "brick", "values", "question", "result", "warranty", "usd", "runs")
 
 
 def _kind(name: str, mime: str) -> str:
@@ -48,19 +54,67 @@ class Session:
         self.result: dict | None = None
         self.warranty: dict | None = None
         self.usd = 0.0
+        self.runs: list[dict] = []      # every judged question of this session, newest last
         self.job = {"phase": "idle", "tried": 0, "total": 0, "elapsed": 0.0, "log": []}
         self._lock = threading.Lock()
 
+    # ---------- persistence
+    @property
+    def preset_id(self):
+        return self.preset["id"]
+
+    def save(self):
+        d = STORE / self.id
+        (d / "files").mkdir(parents=True, exist_ok=True)
+        state = {k: getattr(self, k) for k in _SAVED}
+        state["files"] = [{k: f[k] for k in ("name", "mime", "kind", "size")} for f in self.files]
+        tmp = d / "session.json.tmp"
+        tmp.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(d / "session.json")
+
+    @classmethod
+    def load(cls, sid: str) -> "Session | None":
+        d = STORE / sid
+        try:
+            state = json.loads((d / "session.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+        s = cls(state.get("preset_id") or "pump")
+        s.id = sid
+        for k in _SAVED:
+            if k != "preset_id" and k in state:
+                setattr(s, k, state[k])
+        for f in state.get("files", []):
+            fp = d / "files" / f["name"]
+            if fp.is_file():
+                s.files.append(dict(f, data=fp.read_bytes()))
+        return s
+
+    def _record_run(self):
+        self.runs.append({"n": len(self.runs) + 1, "at": time.strftime("%H:%M:%S"), "preset": self.preset["id"],
+                          # the run is labelled by what the person asked, not by the model's paraphrase
+                          "question": next((m["text"] for m in reversed(self.history) if m["role"] == "user"),
+                                           self.question),
+                          "files": [f["name"] for f in self.files],
+                          "result": self.result, "warranty": self.warranty,
+                          "values": copy.deepcopy(self.values), "brick": copy.deepcopy(self.brick)})
+        self.save()
+
     # ---------- inputs
     def add_file(self, name: str, mime: str, data: bytes) -> dict:
+        name = pathlib.Path(name).name or "file"
         f = {"name": name, "mime": mime, "data": data, "kind": _kind(name, mime), "size": len(data)}
         self.files.append(f)
+        (STORE / self.id / "files").mkdir(parents=True, exist_ok=True)
+        (STORE / self.id / "files" / name).write_bytes(data)
+        self.save()
         return {k: f[k] for k in ("name", "kind", "size")}
 
     def say(self, text: str, preset_id: str | None = None):
         if preset_id:
             self.preset = presets.by_id(preset_id)
         self.history.append({"role": "user", "text": text})
+        self.save()
         self._start(self._pipeline)
 
     def confirm(self, quantity: str, value: str | None = None):
@@ -80,12 +134,21 @@ class Session:
             self._start(self._rejudge)
         elif self.result:
             self.warranty = warranty.judge(self.result.get("verdict", ""), self.values)
+            self._sync_last_run()
 
     def confirm_all(self):
         for v in self.values:
             v["confirmed"] = True
         if self.result:
             self.warranty = warranty.judge(self.result.get("verdict", ""), self.values)
+        self._sync_last_run()
+
+    def _sync_last_run(self):
+        """A confirmation without a new judgement changes the warranty of the latest run, not a new run."""
+        if self.runs and self.runs[-1]["result"] == self.result:
+            self.runs[-1]["warranty"] = self.warranty
+            self.runs[-1]["values"] = copy.deepcopy(self.values)
+        self.save()
 
     # ---------- the pipeline
     def _start(self, fn):
@@ -108,6 +171,7 @@ class Session:
             self.job["error"] = f"{type(e).__name__}: {e}"
             self.job["trace"] = traceback.format_exc()[-1500:]
         self.job["elapsed"] = round(time.time() - self.job["t0"], 1)
+        self.save()
 
     def _log(self, s: str):
         self.job["log"].append({"t": round(time.time() - self.job.get("t0", time.time()), 1), "msg": s})
@@ -196,6 +260,7 @@ class Session:
         self.result = res
         self.warranty = warranty.judge(res.get("verdict", ""), self.values)
         self._log(f"verdict: {res.get('verdict')}; warranty: {self.warranty['status']}")
+        self._record_run()
 
     def _run_stand(self, brick) -> dict:
         jid = runner.start(brick)
@@ -219,7 +284,26 @@ class Session:
                 "values": self.values, "warranty": self.warranty, "job": {k: v for k, v in self.job.items()
                                                                           if k != "trace"},
                 "result": {k: r[k] for k in keep if k in r}, "brick": self.brick, "usd": round(self.usd, 4),
+                "runs": [{"n": x["n"], "at": x["at"], "preset": x["preset"], "question": x["question"],
+                          "verdict": (x["result"] or {}).get("verdict"), "status": (x["warranty"] or {}).get("status")}
+                         for x in self.runs],
                 "spent": meta.spent(), "cap": meta.CAP_USD}
+
+
+    def run_view(self, n: int) -> dict | None:
+        for x in self.runs:
+            if x["n"] == n:
+                return x
+        return None
+
+
+def get(sid: str) -> Session | None:
+    s = SESSIONS.get(sid)
+    if s is None and sid.isalnum():
+        s = Session.load(sid)
+        if s:
+            SESSIONS[sid] = s
+    return s
 
 
 def new(preset_id: str = "pump") -> Session:

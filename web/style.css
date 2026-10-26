@@ -147,3 +147,16 @@ pre.json { font-size: 12px; background: var(--bg); padding: 10px; border-radius:
             background: color-mix(in srgb, var(--accent-soft) 88%, transparent); color: var(--accent); font-weight: 700;
             place-items: center; text-align: center; padding: 20px; pointer-events: none; }
 .chat.over .dropveil { display: grid; }
+
+h3.row { display: flex; justify-content: space-between; align-items: center; }
+.runs { list-style: none; margin: 0; padding: 0; max-height: 210px; overflow-y: auto; }
+.runs li { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; gap: 0 8px; padding: 7px 8px;
+           border-radius: 8px; cursor: pointer; font-size: 13px; }
+.runs li:hover, .runs li.on { background: var(--accent-soft); }
+.runs .rn { font-weight: 700; color: var(--muted); }
+.runs .rq { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.runs .rs { font-size: 11px; font-weight: 800; padding: 1px 8px; border-radius: 999px; color: #fff; align-self: center; }
+.runs .rs.EARNED { background: var(--earned); } .runs .rs.REFUTED { background: var(--refuted); }
+.runs .rs.CREDIT { background: var(--credit); } .runs .rs.OPEN { background: var(--open); }
+.runs .rt { grid-column: 2; font-size: 11px; color: var(--muted); }
+.viewing { background: var(--credit-soft); color: var(--ink); border-radius: 8px; padding: 6px 10px; font-size: 13px; margin-bottom: 10px; }

@@ -1,7 +1,8 @@
 // ZTL Engineer — the page. No framework: one session, polled while a run is in progress.
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-let PRESETS = [], S = null, polling = null;
+let PRESETS = [], S = null, polling = null, VIEW = null;   // VIEW: an earlier run being looked at, or null
+const KEY = "ztl-engineer.session";
 
 async function api(path, body) {
   const r = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -32,11 +33,23 @@ async function init() {
   PRESETS = await api("/api/presets");
   $("preset").innerHTML = PRESETS.map((p) => `<option value="${p.id}">${p.icon}  ${esc(p.title)}</option>`).join("");
   $("preset").onchange = () => showHint(PRESETS.find((p) => p.id === $("preset").value));
-  showHint(PRESETS[0]);
-  S = await api("/api/session", { preset: PRESETS[0].id });
+  // the session survives going to Help and back, and a server restart: its id is kept in this browser
+  let sid = null;
+  try { sid = localStorage.getItem(KEY); } catch (e) {}
+  if (sid) { try { S = await api(`/api/session/${sid}`); } catch (e) { S = null; } }
+  if (!S) await newSession();
+  $("preset").value = S.preset;
+  showHint(PRESETS.find((p) => p.id === S.preset) || PRESETS[0]);
   render(S);
+  if (!["idle", "done", "error"].includes(S.job.phase)) poll();
   refreshSpend();
 }
+async function newSession() {
+  S = await api("/api/session", { preset: $("preset").value || PRESETS[0].id });
+  try { localStorage.setItem(KEY, S.id); } catch (e) {}
+  VIEW = null;
+}
+$("newSession").onclick = async () => { await newSession(); render(S); };
 
 async function refreshSpend() {
   try { const s = await api("/api/spend"); $("spend").textContent = `API $${s.usd.toFixed(2)} / $${s.cap.toFixed(0)}`; } catch (e) {}
@@ -77,7 +90,7 @@ function poll() {
   polling = setInterval(async () => {
     S = await api(`/api/session/${S.id}`);
     render(S);
-    if (["done", "error", "idle"].includes(S.job.phase)) { clearInterval(polling); refreshSpend(); }
+    if (["done", "error", "idle"].includes(S.job.phase)) { clearInterval(polling); VIEW = null; render(S); refreshSpend(); }
   }, 700);
 }
 
@@ -85,7 +98,8 @@ function poll() {
 const PHASE = { starting: "Starting…", reading: "Muse Spark is reading", proving: "ZTL stand is proving",
   repairing: "Muse Spark is repairing the brick", done: "Done", error: "Stopped", idle: "" };
 
-function render(s) {
+function render(s0) {
+  let s = s0;
   // files
   $("files").innerHTML = s.files.map((f) => `<li title="${(f.size / 1024).toFixed(0)} KB"><span class="kind">${f.kind}</span>${esc(f.name)}</li>`).join("");
   // chat
@@ -109,10 +123,23 @@ function render(s) {
     $("pcount").textContent = j.elapsed ? `${j.elapsed}s` : "";
   }
   $("log").innerHTML = (j.log || []).map((l) => `<li>${esc(l.msg)}</li>`).join("") + (j.error ? `<li style="color:var(--refuted)">${esc(j.error)}</li>` : "");
+  // runs
+  $("runsCard").hidden = !(s.runs && s.runs.length);
+  $("runs").innerHTML = (s.runs || []).slice().reverse().map((x) => `<li class="${VIEW && VIEW.n === x.n ? "on" : ""}" data-run="${x.n}">
+      <span class="rn">#${x.n}</span><span class="rq">${esc(x.question || "")}</span>
+      <span class="rs ${chipClass(x.status || x.verdict || "")}">${esc(x.status || x.verdict || "")}</span><span class="rt">${esc(x.at)}</span></li>`).join("");
+  document.querySelectorAll("[data-run]").forEach((li) => li.onclick = () => openRun(+li.dataset.run));
+  const latest = s.runs && s.runs.length ? s.runs[s.runs.length - 1].n : null;
+  const old = VIEW && VIEW.n !== latest;
+  $("viewing").hidden = !old;
+  if (old) $("viewing").innerHTML = `Viewing run #${VIEW.n} from ${esc(VIEW.at)} · <a href="#" id="backNow">back to the latest</a>`;
+  if (old) $("backNow").onclick = (e) => { e.preventDefault(); VIEW = null; render(S); };
+  if (old) s = Object.assign({}, s, { warranty: VIEW.warranty, result: VIEW.result || {}, values: VIEW.values || [],
+                                      brick: VIEW.brick, question: VIEW.question, job: { phase: "done", log: [] } });
   // verdict
   const w = s.warranty, r = s.result || {};
   if (w) {
-    const cls = w.status === "EARNED" ? "EARNED" : w.status === "REFUTED" ? "REFUTED" : w.status.includes("CREDIT") ? "CREDIT" : "OPEN";
+    const cls = chipClass(w.status);
     $("verdict").className = `verdict ${cls}`;
     $("verdict").innerHTML = `<span class="chip">${esc(w.status)}</span><span class="head">${esc(w.headline)}</span>
       ${s.question ? `<span class="why">Question: ${esc(s.question)}</span>` : ""}
@@ -128,6 +155,7 @@ function render(s) {
   }
   // values
   $("valuesCard").hidden = !s.values.length;
+  $("confirmAll").hidden = !!old;
   $("vals").innerHTML = s.values.map((v) => {
     const clean = v.confirmed || v.from === "file";
     return `<tr><td class="q">${esc(v.quantity)}</td>
@@ -135,7 +163,7 @@ function render(s) {
         ${v.read_as ? `<div class="where">read as ${esc(v.read_as)}</div>` : ""}</td>
       <td><span class="src ${clean ? "clean" : "dirty"}">${clean ? "confirmed" : "dirty"}</span>
         <div class="where">${v.where && v.where.toLowerCase().startsWith(String(v.from).toLowerCase()) ? esc(v.where) : esc(v.from) + (v.where ? ": " + esc(v.where) : "")}</div></td>
-      <td class="row-actions">${clean ? "" : `<button class="small" data-confirm="${esc(v.quantity)}">Confirm</button>`}</td></tr>`;
+      <td class="row-actions">${clean || old ? "" : `<button class="small" data-confirm="${esc(v.quantity)}">Confirm</button>`}</td></tr>`;
   }).join("");
   document.querySelectorAll("[data-confirm]").forEach((b) => b.onclick = () => confirmValue(b.dataset.confirm));
   document.querySelectorAll("#vals input").forEach((inp) => inp.onkeydown = (e) => { if (e.key === "Enter") confirmValue(inp.dataset.q); });
@@ -153,6 +181,14 @@ function pretty(v) {
   const s = String(v ?? "");
   const m = s.match(/\(~([^)\s]+)\)/) || s.match(/^~(\S+)/);
   return m ? "≈ " + m[1] : s;
+}
+function chipClass(st) {
+  return st === "EARNED" ? "EARNED" : st === "REFUTED" ? "REFUTED" : String(st).includes("CREDIT") ? "CREDIT" : "OPEN";
+}
+async function openRun(n) {
+  const latest = S.runs[S.runs.length - 1].n;
+  VIEW = n === latest ? null : await api(`/api/session/${S.id}/run/${n}`);
+  render(S);
 }
 function kv(obj) {
   if (!obj || typeof obj !== "object") return esc(obj);
