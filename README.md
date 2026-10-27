@@ -41,7 +41,8 @@ this repository, put a Meta Model API key in `META_API_KEY` or `~/.config/meta-a
   only limit).
 - **A brick is data, never code.** Uploaded bricks and the bricks the model writes (a datasheet may carry hidden
   instructions) are checked by the stand before anything reads them: their expressions may be arithmetic over names
-  only — no attributes, indexing, strings or other Python (ztl-stand `ustand/safeexpr.py`).
+  only — no attributes, indexing, strings or other Python (ztl-stand `ustand/safeexpr.py`); a system of components
+  may not name files outside its own folder, and one given as data names none.
 - **Uploaded files** are stored under `runs/<session>/files/` with a cleaned name (no folders, quotes or line breaks).
 
 ## Built with
