@@ -44,25 +44,34 @@ async function init() {
   const groups = [...new Set(PRESETS.map((p) => p.group || ""))];
   $("preset").innerHTML = groups.map((g) => g ? `<optgroup label="${esc(g)}">${PRESETS.filter((p) => p.group === g).map(opt).join("")}</optgroup>`
                                               : PRESETS.filter((p) => !p.group).map(opt).join("")).join("");
-  $("preset").value = "any";                 // the default task: any engineering question (curator, 27.10)
+  const DEFAULT = "any";                     // the default task: any engineering question (curator, 27.10)
+  $("preset").value = DEFAULT;
   $("preset").onchange = () => showHint(PRESETS.find((p) => p.id === $("preset").value));
   // the session survives going to Help and back, and a server restart: its id is kept in this browser
   let sid = null;
   try { sid = localStorage.getItem(KEY); } catch (e) {}
   if (sid) { try { S = await api(`/api/session/${sid}`); } catch (e) { S = null; } }
   if (!S) await newSession();
-  $("preset").value = S.preset;
-  showHint(PRESETS.find((p) => p.id === S.preset) || PRESETS[0]);
+  // a session with a conversation keeps its task; an empty one opens on the default (a stored empty session used to
+  // pin the old task: neither New nor F5 brought the default back — curator, 27.10)
+  const task = S.history.length ? S.preset : DEFAULT;
+  $("preset").value = task;
+  showHint(PRESETS.find((p) => p.id === task) || PRESETS[0]);
   render(S);
   if (!["idle", "done", "error"].includes(S.job.phase)) poll();
   refreshSpend();
 }
 async function newSession() {
-  S = await api("/api/session", { preset: $("preset").value || PRESETS[0].id });
+  S = await api("/api/session", { preset: PRESETS[0].id });
   try { localStorage.setItem(KEY, S.id); } catch (e) {}
   VIEW = null;
 }
-$("newSession").onclick = async () => { await newSession(); render(S); };
+$("newSession").onclick = async () => {
+  await newSession();
+  $("preset").value = S.preset;                 // New starts from the default task, its hint shown
+  showHint(PRESETS.find((p) => p.id === S.preset) || PRESETS[0]);
+  render(S);
+};
 
 async function refreshSpend() {
   try { const s = await api("/api/spend"); $("spend").textContent = `API $${s.usd.toFixed(2)} / $${s.cap.toFixed(0)}`; } catch (e) {}
