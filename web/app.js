@@ -16,11 +16,17 @@ function showHint(p) {
     <dl><dt>Tell the AI</dt><dd>${esc(p.say)}</dd><dt>Give it</dt><dd>${esc(p.give)}</dd>
     ${p.note ? `<dt>Note</dt><dd><b>${esc(p.note)}</b></dd>` : ""}
     ${p.source ? `<dt>Source</dt><dd><a href="${esc(p.source)}" target="_blank" rel="noopener">${esc(p.source)}</a></dd>` : ""}</dl>
-    <div class="example"><b>Example</b><br>${esc(p.example)}<br><button class="ghost small" id="useEx">Use this example${p.demo ? " (with demo file" + (p.demo.length > 1 ? "s" : "") + ")" : ""}</button></div>`;
-  $("useEx").onclick = async () => {
-    $("text").value = p.example;
-    // the example's own demo files (a nameplate, a netlist + BOM, a deck) go into the session with it
-    for (const src of p.demo || []) {
+    <div class="example"><b>Example</b><br>${esc(p.example)}<br><button class="ghost small" id="useEx">Use this example${p.demo ? " (with demo file" + (p.demo.length > 1 ? "s" : "") + ")" : ""}</button></div>
+    ${p.next ? `<div class="example"><b>Then</b><br>${esc(p.next.label)}<br><button class="ghost small" id="useNext">${esc(p.next.button)}</button></div>` : ""}`;
+  $("useEx").onclick = () => useExample(p.example, p.demo);
+  if (p.next) $("useNext").onclick = () => useExample(p.next.text, p.next.demo);
+}
+
+// an example's words go into the box and its demo files (a nameplate, a netlist + BOM, a deck) into the session
+async function useExample(text, demo) {
+  {
+    $("text").value = text;
+    for (const src of demo || []) {
       const name = src.split("/").pop();
       if (S.files.some((f) => f.name === name && (f.msg === null || f.msg === undefined))) continue;
       const blob = await (await fetch(`/demo/${src}`)).blob();
@@ -29,7 +35,7 @@ function showHint(p) {
     }
     S = await api(`/api/session/${S.id}`); render(S);
     $("text").focus();
-  };
+  }
 }
 
 async function init() {

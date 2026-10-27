@@ -24,9 +24,12 @@ PRESETS = [
      "example": "Cette pompe donne-t-elle 8 m³ par jour au village ? L'eau est à 22 m, je ne sais pas de combien "
                 "elle baisse en pompant — peut-être 5 à 15 m. Réservoir sur une tour de 6 m. 5 à 6 heures de soleil.",
      "demo": ["nameplate-solar-sp400.png"],
+     "next": {"label": "Compare with a stronger pump: its nameplate goes in, and the same question is asked again.",
+              "button": "Compare with the second pump (SP-750)", "text": "Et celle-ci ?",
+              "demo": ["nameplate-solar-sp750.png"]},
      "note": "Illustrative case with demo nameplates. The pump on the first plate is what a seller would pick from "
-             "the resting water level (8 m³ in 5 sun hours at about 30 m); a second plate, SP-750, is in the demo "
-             "folder to compare.",
+             "the resting water level (8 m³ in 5 sun hours at about 30 m) — the check is there to catch that; the "
+             "second plate, SP-750, is the one to compare.",
      "inputs": ["photo", "pdf"]},
     {"id": "clinic", "title": "Clinic solar kit — the cheapest that keeps the vaccine fridge on", "icon": "🏥",
      "say": "Say what the clinic must power each day (the vaccine fridge, the lights), how many cloudy days in a row it "
