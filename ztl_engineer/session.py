@@ -103,7 +103,7 @@ class Session:
     # ---------- inputs
     def add_file(self, name: str, mime: str, data: bytes) -> dict:
         """A file waits beside the input box (msg None) until the next message is sent, then belongs to it."""
-        name = pathlib.Path(name).name or "file"
+        name = safe_name(name)
         self.files = [f for f in self.files if not (f["name"] == name and f.get("msg") is None)]
         f = {"name": name, "mime": mime, "data": data, "kind": _kind(name, mime), "size": len(data), "msg": None}
         self.files.append(f)
@@ -507,6 +507,15 @@ class Session:
             if x["n"] == n:
                 return x
         return None
+
+
+def safe_name(name: str) -> str:
+    """a file name that is only a name: no folders, no "." or "..", no quotes or line breaks (it goes into a response
+    header), letters/digits/space/._- and nothing else, at most 120 characters (security review, 2026-10-27)"""
+    import re
+    base = pathlib.Path(str(name).replace("\\", "/")).name
+    base = re.sub(r"[^\w .\-]", "_", base).strip(" .")[:120]
+    return base or "file"
 
 
 def get(sid: str) -> Session | None:

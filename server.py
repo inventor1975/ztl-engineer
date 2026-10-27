@@ -22,6 +22,7 @@ from ztl_engineer import meta, presets, session as SS  # noqa: E402
 
 WEB = HERE / "web"
 MAX_BODY = 40 * 1024 * 1024
+LOCAL = {"localhost", "127.0.0.1", "::1"}
 
 
 class H(BaseHTTPRequestHandler):
@@ -45,7 +46,25 @@ class H(BaseHTTPRequestHandler):
             raise ValueError("upload too large (40 MB at most)")
         return json.loads(self.rfile.read(n) or b"{}")
 
+    def _local(self, post=False) -> bool:
+        """Only this machine's own browser tab may talk to the app (security review, 2026-10-27). The server listens on
+        127.0.0.1, but any web page open in the same browser can still send requests to it: a wrong Host is a DNS
+        rebinding page, a foreign Origin is another site posting here, and a POST that is not JSON is a form or a
+        'simple' request that skipped the browser's CORS check."""
+        import urllib.parse
+        host = urllib.parse.urlsplit("//" + (self.headers.get("Host") or "")).hostname
+        if host not in LOCAL:
+            return False
+        origin = self.headers.get("Origin")
+        if origin and urllib.parse.urlsplit(origin).hostname not in LOCAL:
+            return False
+        if post and (self.headers.get("Content-Type") or "").split(";")[0].strip() != "application/json":
+            return False
+        return True
+
     def do_GET(self):
+        if not self._local():
+            return self._send(403, {"error": "only this machine's browser may use the app"})
         p = self.path.split("?")[0]
         if p in ("/", "/index.html"):
             return self._file(WEB / "index.html")
@@ -85,7 +104,11 @@ class H(BaseHTTPRequestHandler):
                     return self._send(404, {"error": "no such file"})
                 self.send_response(200)
                 self.send_header("Content-Type", f.get("mime") or "application/octet-stream")
-                self.send_header("Content-Disposition", f'attachment; filename="{f["name"]}"')
+                import urllib.parse
+                nm = SS.safe_name(f["name"])
+                ascii_nm = nm.encode("ascii", "replace").decode().replace("?", "_")
+                self.send_header("Content-Disposition",
+                                 f"attachment; filename=\"{ascii_nm}\"; filename*=UTF-8''{urllib.parse.quote(nm)}")
                 self.send_header("Content-Length", str(len(f["data"])))
                 self.end_headers()
                 self.wfile.write(f["data"])
@@ -124,6 +147,8 @@ class H(BaseHTTPRequestHandler):
         return self._send(200, f.read_bytes(), ctype)
 
     def do_POST(self):
+        if not self._local(post=True):
+            return self._send(403, {"error": "only this machine's browser may use the app (JSON requests)"})
         p = self.path.split("?")[0]
         try:
             d = self._body()
