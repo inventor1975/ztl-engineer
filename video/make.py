@@ -24,7 +24,16 @@ START = {"published": "example in", "heavy": "example in", "muhanna": "example i
 CARDS = ("title", "problem", "options", "end")
 # montage scenes are cut from the front to their narration's length: the end (the result on screen) is what stays
 FIT_TO_VOICE = ("published", "heavy", "muhanna", "clinic")
-ORDER = ["problem", "options", "borehole", "borehole2", "clinic", "published", "muhanna", "reproduce", "end"]
+# picture scenes: AI pictures (story.py), cards, result slides (slides.py), each with a slow zoom; a scene's pictures
+# share its narration's length, except the montage, whose slides keep their own pace with no explanation
+STORIES = {"promise": ["story_seller"], "gap": ["story_borehole", "story_far", "story_clinic", "story_empty"],
+           "turn": ["story_phone", "card_title"], "close": ["story_water", "card_end"],
+           **{f"m{i}": [f"slide_{i}"] for i in range(1, 7)}}
+FIXED = {}
+# the notebook: its pages m1..m6 are turned one into the next (a slide to the left), each with one line of comment
+PAGES = [f"m{i}" for i in range(1, 7)]
+TURN = 0.5
+ORDER = ["promise", "gap", "turn", "borehole", "borehole2", *PAGES, "reproduce", "close"]
 
 
 def run(args):
@@ -63,6 +72,26 @@ def card_video(name, seconds):
     return dst, seconds
 
 
+def story_video(name):
+    """the scene's pictures one after another, each slowly zooming in"""
+    pics = STORIES[name]
+    adur = sf.info(str(AUD / f"{name}.wav")).duration
+    each = FIXED.get(name) or (LEAD + adur + TAIL) / len(pics)
+    parts = []
+    for i, pic in enumerate(pics):
+        n = int(round(each * 30))
+        dst = OUT / f"p_{name}_{i}.mp4"
+        run(["-loop", "1", "-i", str(RAW / f"{pic}.png"), "-vf",
+             f"scale=2112:1188,zoompan=z='1+0.05*on/{n}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={n}:s=1920x1080:fps=30,"
+             "format=yuv420p", "-frames:v", str(n), "-c:v", "libx264", "-crf", "18", str(dst)])
+        parts.append(dst)
+    lst = OUT / f"p_{name}.txt"
+    lst.write_text("".join(f"file '{p}'\n" for p in parts))
+    dst = OUT / f"v_{name}.mp4"
+    run(["-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(dst)])
+    return dst, dur(dst)
+
+
 def with_voice(name, vpath, vdur):
     """lay the narration over the scene; hold the last frame if the narration is longer; fade in and out"""
     apath = AUD / f"{name}.wav"
@@ -70,8 +99,9 @@ def with_voice(name, vpath, vdur):
     total = max(vdur, LEAD + adur + TAIL)
     pad = total - vdur
     dst = OUT / f"s_{name}.mp4"
-    vf = (f"tpad=stop_mode=clone:stop_duration={pad:.3f}," if pad > 0.01 else "") + \
-         f"fade=t=in:st=0:d=0.35,fade=t=out:st={total - 0.35:.3f}:d=0.35"
+    fades = "" if name in PAGES else f"fade=t=in:st=0:d=0.35,fade=t=out:st={total - 0.35:.3f}:d=0.35"
+    vf = ",".join(x for x in ((f"tpad=stop_mode=clone:stop_duration={pad:.3f}" if pad > 0.01 else ""), fades) if x) \
+        or "null"
     af = f"adelay={int(LEAD * 1000)}:all=1,apad=whole_dur={total:.3f},afade=t=out:st={total - 0.3:.3f}:d=0.3"
     run(["-i", str(vpath), "-i", str(apath), "-filter_complex", f"[0:v]{vf}[v];[1:a]{af}[a]", "-map", "[v]",
          "-map", "[a]", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-c:a", "aac", "-b:a", "160k",
@@ -83,10 +113,12 @@ def main():
     OUT.mkdir(exist_ok=True)
     parts, timeline, t = [], [], 0.0
     for name in ORDER:
-        if name not in CARDS and not (RAW / f"{name}.json").exists():
+        if name not in CARDS and name not in STORIES and not (RAW / f"{name}.json").exists():
             print(f"(skipped: {name} not recorded yet)")
             continue
-        if name in CARDS:
+        if name in STORIES:
+            v, d = story_video(name)
+        elif name in CARDS:
             v, d = card_video(name, 1.0)
         else:
             v, d = scene_video(name)
@@ -100,6 +132,25 @@ def main():
         parts.append(s)
         timeline.append((name, round(t, 1), round(total, 1)))
         t += total
+    # the notebook's pages turned into one another
+    names = [n for n in ORDER if n in PAGES and any(f"s_{n}.mp4" == p.name for p in parts)]
+    if len(names) > 1:
+        idx = [i for i, p in enumerate(parts) if p.name in {f"s_{n}.mp4" for n in names}]
+        durs = [dur(parts[i]) for i in idx]
+        inputs, fv, fa, off = [], "", "", 0.0
+        for i in idx:
+            inputs += ["-i", str(parts[i])]
+        prev_v, prev_a = "[0:v]", "[0:a]"
+        for k in range(1, len(idx)):
+            off += durs[k - 1] - TURN
+            fv += f"{prev_v}[{k}:v]xfade=transition=slideleft:duration={TURN}:offset={off:.3f}[v{k}];"
+            fa += f"{prev_a}[{k}:a]acrossfade=d={TURN}[a{k}];"
+            prev_v, prev_a = f"[v{k}]", f"[a{k}]"
+        book = OUT / "s_notebook.mp4"
+        run([*inputs, "-filter_complex", (fv + fa).rstrip(";"), "-map", prev_v, "-map", prev_a, "-c:v", "libx264",
+             "-pix_fmt", "yuv420p", "-crf", "18", "-c:a", "aac", "-b:a", "160k", "-ar", "48000", str(book)])
+        parts = parts[:idx[0]] + [book] + parts[idx[-1] + 1:]
+        t -= (len(idx) - 1) * TURN
     lst = OUT / "parts.txt"
     lst.write_text("".join(f"file '{p}'\n" for p in parts))
     final = OUT / "ztl-engineer-demo.mp4"

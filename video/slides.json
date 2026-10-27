@@ -1,0 +1,38 @@
+[
+ {
+  "session": "a4c83f0fb5a1",
+  "run": 1,
+  "title": "A rural clinic's solar kit — the cheapest that keeps the vaccine fridge on",
+  "focus": "#details .limit"
+ },
+ {
+  "session": "8f2f989b959b",
+  "run": 1,
+  "title": "A published datasheet example — the current-limit resistor",
+  "focus": "#details .limit"
+ },
+ {
+  "session": "ec0b8579673c",
+  "run": 1,
+  "title": "A voltage regulator — the largest heatsink that still keeps it cool",
+  "focus": "#details .limit"
+ },
+ {
+  "session": "1cff9c1eaf0e",
+  "run": 1,
+  "title": "A sensor and its ADC — the worst-case error over every tolerance",
+  "focus": "#details .kv"
+ },
+ {
+  "session": "e18674800f85",
+  "run": 1,
+  "title": "A 36 m bridge girder — 32,768 designs",
+  "focus": "#details .limit"
+ },
+ {
+  "session": "e18674800f85",
+  "run": 2,
+  "title": "Muhanna's benchmark — 2^101 tolerance corners",
+  "focus": "#details .limit"
+ }
+]
