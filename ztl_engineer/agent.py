@@ -42,7 +42,8 @@ Rules:
 - Use tolerances or ranges when the source gives them; a nameplate value with no tolerance is exact.
 - A centrifugal pump's curve from a nameplate: H = H0 - a*Q^2 (the stand's form, BRICKS.md), with H0 = the shutoff
   head (H max) and a fixed by the rated point; say in "reply" which plate points you used and which you did not.
-- Pipe friction the person did not give is an "assumption" you state with its value — not silently zero.
+- Pipe friction the person did not give is an "assumption" you state with its value: a CONSERVATIVE non-zero estimate
+  for the pipe a site like this would have, never zero (zero friction makes a pump look better than it is).
 - Keep the brick as small as the question needs. Units always. Numbers always as strings.
 - If the question truly cannot be posed yet, set "ready": false and ask in "reply" for exactly what is missing.
 
