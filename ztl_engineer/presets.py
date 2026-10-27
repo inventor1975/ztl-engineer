@@ -220,4 +220,4 @@ def by_id(pid: str) -> dict:
     for p in PRESETS:
         if p["id"] == pid:
             return p
-    return by_id("borehole") if pid != "borehole" else PRESETS[1]   # the village borehole, the app's default
+    return PRESETS[0]          # "Any engineering question", the app's default (curator, 27.10)

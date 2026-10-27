@@ -153,7 +153,7 @@ class H(BaseHTTPRequestHandler):
         try:
             d = self._body()
             if p == "/api/session":
-                s = SS.new(d.get("preset") or "pump")
+                s = SS.new(d.get("preset") or "any")
                 return self._send(200, s.view())
             parts = p.split("/")
             s = SS.get(parts[3]) if len(parts) > 4 else None

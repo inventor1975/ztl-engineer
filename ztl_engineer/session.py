@@ -43,7 +43,7 @@ def _kind(name: str, mime: str) -> str:
 
 
 class Session:
-    def __init__(self, preset_id: str = "pump"):
+    def __init__(self, preset_id: str = "any"):
         self.id = uuid.uuid4().hex[:12]
         self.preset = presets.by_id(preset_id)
         self.history: list[dict] = []
@@ -79,7 +79,7 @@ class Session:
             state = json.loads((d / "session.json").read_text(encoding="utf-8"))
         except (OSError, ValueError):
             return None
-        s = cls(state.get("preset_id") or "pump")
+        s = cls(state.get("preset_id") or "any")
         s.id = sid
         for k in _SAVED:
             if k != "preset_id" and k in state:
@@ -564,7 +564,7 @@ def get(sid: str) -> Session | None:
     return s
 
 
-def new(preset_id: str = "pump") -> Session:
+def new(preset_id: str = "any") -> Session:
     s = Session(preset_id)
     SESSIONS[s.id] = s
     return s

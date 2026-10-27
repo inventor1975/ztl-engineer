@@ -44,7 +44,7 @@ async function init() {
   const groups = [...new Set(PRESETS.map((p) => p.group || ""))];
   $("preset").innerHTML = groups.map((g) => g ? `<optgroup label="${esc(g)}">${PRESETS.filter((p) => p.group === g).map(opt).join("")}</optgroup>`
                                               : PRESETS.filter((p) => !p.group).map(opt).join("")).join("");
-  $("preset").value = "borehole";            // the default task: the village borehole (the film's main case, 26.10)
+  $("preset").value = "any";                 // the default task: any engineering question (curator, 27.10)
   $("preset").onchange = () => showHint(PRESETS.find((p) => p.id === $("preset").value));
   // the session survives going to Help and back, and a server restart: its id is kept in this browser
   let sid = null;
