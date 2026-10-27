@@ -32,6 +32,19 @@ this repository, put a Meta Model API key in `META_API_KEY` or `~/.config/meta-a
 
     python3 server.py            # http://localhost:8090
 
+## Use it from any AI agent (MCP)
+
+`mcp_server.py` makes ZTL Engineer an MCP server (stdio, standard library only), so an AI agent can ask for an
+independent check before it tells a person "this will work":
+
+- `brick_format` — the stand's brick format, so the agent can write the problem itself;
+- `check_design` — the ZTL stand judges a brick: EARNED / REFUTED with a failing point / OPEN; no AI, no API cost;
+- `ask_engineer` — the whole road in plain words with files: Muse Spark reads, the stand judges (uses Meta API credit).
+
+For example, in Claude Desktop's `claude_desktop_config.json`:
+
+    {"mcpServers": {"ztl-engineer": {"command": "python3", "args": ["/path/to/ztl-engineer/mcp_server.py"]}}}
+
 ## Security
 
 - **Local only.** The server listens on 127.0.0.1 and answers only this machine's browser: a request whose Host or
