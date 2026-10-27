@@ -268,7 +268,7 @@ class Session:
         else:
             n_img = sum(f["kind"] in ("photo", "pdf") for f in files)
             self._log(f"Muse Spark reads the conversation and {n_img} image/PDF file(s)")
-            d = agent.build(self.thread, files, self.preset)
+            d = agent.build_agentic(self.thread, files, self.preset, self._check_for_model)
             self.usd += d.get("usd", 0)
             reply = d.get("reply", "")
             self.question = d.get("question", "") or self.question
@@ -303,7 +303,44 @@ class Session:
         if cad.get("kind") == "truss" and cad.get("ranges") and not (self.brick or {}).get("requirements"):
             self._truss_ranges(cad)
             return
+        checks = None if bricks else d.get("checks")
+        if checks:
+            self._finish_checked(checks)
+            return
         self._judge_with_repair()
+
+    def _check_for_model(self, brick: dict) -> dict:
+        """Muse Spark's check_design: the stand judges the model's brick (progress shown as for any run)"""
+        self.job["phase"] = "proving"
+        n = getattr(self, "_model_checks", 0) + 1
+        self._model_checks = n
+        self._log(f"Muse Spark asks the ZTL stand to check its brick (call {n})")
+        res = self._run_stand(copy.deepcopy(brick))
+        self._log(f"the stand answers Muse Spark: {res.get('verdict')}")
+        self.job["phase"] = "reading"
+        return res
+
+    def _finish_checked(self, checks):
+        """the model checked its own brick: the answer shown is the stand's answer to the brick the model ended with;
+        if its final JSON carries a different brick, the stand judges that one too (the stand decides, not the model)"""
+        self._model_checks = 0
+        last_brick, res = checks[-1]
+        judged = [b for b, r in checks if r.get("verdict") != "BRICK ERROR"]
+        same = lambda b: not judged or (agent._givens(b) == agent._givens(judged[0])            # noqa: E731
+                                        and agent._reqs(b) == agent._reqs(judged[0]))
+        if self.brick and json.dumps(self.brick, sort_keys=True) != json.dumps(last_brick, sort_keys=True) \
+                and same(self.brick) and res.get("verdict") not in ("EARNED", "REFUTED"):
+            self._log("the final brick differs from the last one checked — the stand judges it")
+            self.job["phase"] = "proving"
+            res = self._run_stand(copy.deepcopy(self.brick))
+        else:
+            if self.brick and json.dumps(self.brick, sort_keys=True) != json.dumps(last_brick, sort_keys=True):
+                self._log("the final brick differs from the last one checked — the checked one stands")
+            self.brick = last_brick
+        self.result = res
+        self.warranty = warranty.judge(res.get("verdict", ""), self.values)
+        self._log(f"verdict: {'FOUND (' + str(res.get('verdict')) + ')' if res.get('find') and res.get('proved') else res.get('verdict')}")
+        self._record_run()
 
     def _truss_ranges(self, cad):
         """The proved range of each asked displacement: each END (min, max) in its own process (truss_end.py says

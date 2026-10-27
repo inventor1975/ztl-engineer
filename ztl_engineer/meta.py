@@ -106,6 +106,29 @@ def ask(content: list[dict] | str, *, instructions: str | None = None, effort: s
             "reasoning": {"effort": effort}, "max_output_tokens": max_output_tokens}
     if instructions:
         body["instructions"] = instructions
+    d = _post(body, max_output_tokens, model)
+    text = "".join(c.get("text", "") for o in d.get("output", []) if o.get("type") == "message"
+                   for c in o.get("content", []) if c.get("type") == "output_text")
+    return {"text": text, "usage": d["_usage"], "usd": d["_usd"], "spent": d["_spent"], "status": d.get("status")}
+
+
+def respond(items: list[dict], *, instructions: str | None = None, tools: list[dict] | None = None,
+            previous_response_id: str | None = None, effort: str = "low", max_output_tokens: int = 6000,
+            model: str = MODEL) -> dict:
+    """One turn of a tool-using conversation (Responses API function calling): `items` are new input items (a user
+    message, or function_call_output items answering the model's calls); returns the raw response — its "id" for
+    the next turn, its "output" items (function_call and/or message) — with the spending recorded."""
+    body = {"model": model, "input": items, "reasoning": {"effort": effort}, "max_output_tokens": max_output_tokens}
+    if instructions:
+        body["instructions"] = instructions
+    if tools:
+        body["tools"] = tools
+    if previous_response_id:
+        body["previous_response_id"] = previous_response_id
+    return _post(body, max_output_tokens, model)
+
+
+def _post(body: dict, max_output_tokens: int, model: str) -> dict:
     raw = json.dumps(body).encode()
     p = PRICES.get(model, PRICES["muse-spark-1.3"])
     # worst case: every byte of the request a token (images are far fewer tokens than base64 bytes — an over-count)
@@ -132,6 +155,4 @@ def ask(content: list[dict] | str, *, instructions: str | None = None, effort: s
     usd = price(usage, model)
     with _LOCK:
         s = _record(usd)
-    text = "".join(c.get("text", "") for o in d.get("output", []) if o.get("type") == "message"
-                   for c in o.get("content", []) if c.get("type") == "output_text")
-    return {"text": text, "usage": usage, "usd": usd, "spent": s, "status": d.get("status")}
+    return dict(d, _usage=usage, _usd=usd, _spent=s)

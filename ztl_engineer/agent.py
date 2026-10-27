@@ -121,6 +121,108 @@ def build(history: list[dict], files: list[dict], preset: dict) -> dict:
     return d
 
 
+# ---------- the agentic road: Muse Spark calls the stand itself (Responses API function calling)
+TOOL_ROLE = """
+
+YOU HAVE ONE TOOL, check_design(brick): the ZTL stand judges your brick and answers with its verdict. Use it:
+- When the question is ready, call check_design with your brick BEFORE you answer.
+- BRICK ERROR: the stand could not read the brick. Fix its FORM (units, names, laws, roles) — never a number read from
+  the person's words or files — and call again.
+- OPEN: the stand could not decide. You may rewrite the laws (the same physics, the same numbers, the same
+  requirements; each toleranced or ranged given appearing as few times as possible) and call again.
+- EARNED or REFUTED: the verdict is final. Do not call again; answer.
+At most 4 calls. Then answer with the ONE JSON object described above, its "brick" the one you last checked. Never
+state a verdict the stand did not give; the app shows the stand's own answer.
+"""
+CHECK_TOOL = {"type": "function", "name": "check_design",
+              "description": "The ZTL stand judges an engineering brick: EARNED (proved for every value the tolerances "
+                             "allow), REFUTED (a concrete failing point), OPEN (cannot decide), or BRICK ERROR (cannot "
+                             "read it, with the reason).",
+              "parameters": {"type": "object", "properties": {"brick": {"type": "object"}}, "required": ["brick"]}}
+MAX_CALLS = 4
+
+
+def _summary(res: dict) -> dict:
+    """what the model needs back from the stand: the verdict and its grounds, not the whole report"""
+    keep = ("verdict", "why", "guaranteed", "its_violating_point", "value_there", "overshoot", "objective", "design",
+            "find", "proved", "limit", "decision", "minimal_conflicts")
+    out = {k: res[k] for k in keep if k in res}
+    text = json.dumps(out, ensure_ascii=False, default=str)
+    return out if len(text) <= 4000 else {"verdict": res.get("verdict"), "why": str(res.get("why"))[:1500],
+                                          "note": "the full answer was long and is shown to the person"}
+
+
+def _givens(brick: dict) -> dict:
+    return {n: tuple(str(q.get(k)) for k in ("value", "tolerance", "range"))
+            for n, q in (brick.get("quantities") or {}).items() if q.get("role") == "given"}
+
+
+def _reqs(brick: dict) -> list:
+    return sorted((str(r.get("op")), json.dumps(r.get("value"))) for r in brick.get("requirements") or [])
+
+
+def _tool_call(call: dict, checks: list, check) -> dict:
+    """one check_design call, with the rules the model cannot bend: after EARNED or REFUTED nothing more is checked
+    (no shopping for a verdict); after OPEN a rewrite keeps every given's value, tolerance and range and the
+    requirements' bounds (the form may change, the data and the question may not)."""
+    try:
+        brick = json.loads(call.get("arguments") or "{}").get("brick")
+    except ValueError:
+        brick = None
+    if not isinstance(brick, dict):
+        return {"verdict": "BRICK ERROR", "why": "check_design needs {\"brick\": {...}}"}
+    judged = [(b, r) for b, r in checks if r.get("verdict") != "BRICK ERROR"]
+    if judged and judged[-1][1].get("verdict") in ("EARNED", "REFUTED"):
+        return {"refused": f"already decided: {judged[-1][1]['verdict']} — this verdict is final; answer now"}
+    if judged and (_givens(brick) != _givens(judged[0][0]) or _reqs(brick) != _reqs(judged[0][0])):
+        return {"refused": "a rewrite may change the laws, never a given's value, tolerance or range or a "
+                           "requirement's bound — call again with the same data, or answer now"}
+    res = check(brick)
+    checks.append((brick, res))
+    return _summary(res)
+
+
+def build_agentic(history: list[dict], files: list[dict], preset: dict, check) -> dict:
+    """build(), but Muse Spark checks its own brick with the stand (check(brick) -> the stand's answer) and repairs
+    or rewrites it from the verdict, in one conversation. Returns build()'s JSON plus "checks": [(brick, answer)].
+    The CAD road is unchanged (the stand's importers build that brick, not the model)."""
+    if any(f["kind"] in ("netlist", "bom", "deck") for f in files):
+        return build(history, files, preset)
+    convo = "\n".join(f"{m['role'].upper()}: {m['text']}"
+                      + (f"  [attached: {', '.join(m['files'])}]" if m.get("files") else "") for m in history)
+    content = [{"type": "input_text",
+                "text": f"Task area picked in the app's list: {preset['title']} — a HINT only. The person may ask about "
+                        "something else; the newest message decides what to build.\n\n"
+                        "The conversation, newest last. If the newest message starts a new question unrelated to the "
+                        "earlier ones, build for the newest message ALONE and do not mention the earlier ones. Answer "
+                        "in the language of the newest message.\n\n" + convo}] + _attachments(files)
+    items = [{"type": "message", "role": "user", "content": content}]
+    usd, checks = 0.0, []
+    for _ in range(MAX_CALLS + 2):
+        tools = [CHECK_TOOL] if len(checks) < MAX_CALLS else None
+        if tools is None:
+            items.append({"type": "message", "role": "user", "content": [
+                {"type": "input_text", "text": "No more checks. Answer now with the final JSON object."}]})
+        r = meta.respond(items, instructions=ROLE + BRICKS_MD + TOOL_ROLE, tools=tools, effort="medium",
+                         max_output_tokens=12000)
+        usd += r["_usd"]
+        calls = [o for o in r.get("output", []) if o.get("type") == "function_call"]
+        if not calls:
+            text = "".join(c.get("text", "") for o in r.get("output", []) if o.get("type") == "message"
+                           for c in o.get("content", []) if c.get("type") == "output_text")
+            d = _json(text)
+            d.update(usd=usd, road="model", checks=checks)
+            return d
+        for c in calls:
+            items.append({"type": "function_call", "call_id": c["call_id"], "name": c["name"],
+                          "arguments": c.get("arguments") or "{}"})
+            out = _tool_call(c, checks, check) if c.get("name") == "check_design" else \
+                {"error": f"no tool {c.get('name')!r}"}
+            items.append({"type": "function_call_output", "call_id": c["call_id"],
+                          "output": json.dumps(out, ensure_ascii=False, default=str)})
+    raise meta.ModelError("the model kept calling the stand without answering")
+
+
 def repair(brick: dict, error: str, values: list[dict]) -> dict:
     """The stand refused the brick (BRICK ERROR): give the model the brick and the stand's reason, get it fixed.
     The values must stay the ones read — a repair fixes form, never the data."""

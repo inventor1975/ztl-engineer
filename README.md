@@ -5,7 +5,9 @@ datasheet PDF or your CAD export, and get a **proved** answer — the design wor
 allow, or it provably fails and the stand names the requirements that conflict, or the honest "can't vouch yet".
 
 Meta's **Muse Spark** reads the photos and documents and turns the conversation into a formal design brick; the
-**ZTL stand** judges it. Every value the model read is listed with where it came from, marked "AI read"; correct
+**ZTL stand** judges it. Muse Spark calls the stand itself (Responses API function calling): it checks its own
+brick, repairs the form on a BRICK ERROR, rewrites the laws on an OPEN — never the data or the question, which the
+tool refuses — and a verdict once EARNED or REFUTED is final. What the person sees is always the stand's answer. Every value the model read is listed with where it came from, marked "AI read"; correct
 any of them and press Recalculate to judge again.
 
 Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026).
