@@ -43,7 +43,8 @@ Both are by the same author and are installed beside this repository; nothing fr
 
 ## Run it
 
-Python 3.10+ (standard library only), and `pdftoppm` (poppler-utils) for PDF datasheets. Clone
+Python 3.10+; the app itself uses only the standard library, the stand needs `numpy`, `scipy` and `sympy`; and
+`pdftoppm` (poppler-utils) for PDF datasheets. Clone
 [ZTL](https://github.com/inventor1975/ZTL) and [ztl-stand](https://github.com/inventor1975/ztl-stand) beside this
 repository, put a Meta Model API key in `META_API_KEY` or `~/.config/meta-api-key`, then:
 
