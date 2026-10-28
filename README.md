@@ -21,7 +21,7 @@ range (5–15 m); the seller's pump is refuted (2.8–8.2 m³/day against the 8 
 (9.6–14.5 m³/day). The nameplates are demo plates.*
 
 **Try it live: [engineer.vitalyreznik.com](https://engineer.vitalyreznik.com)** (a public demo on a small server:
-a few questions an hour per visitor, the heavy tasks off). Demo video (3 min): *link added on upload.* Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026),
+a few questions an hour per visitor, the heavy tasks off). **Demo video (3 min): [youtu.be/a8-cb6Ng4-g](https://youtu.be/a8-cb6Ng4-g)** Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026),
 Indie track.
 
 ## What was built during the hackathon, and what was not
