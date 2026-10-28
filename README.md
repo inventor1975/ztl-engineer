@@ -20,7 +20,8 @@ run again on the open-source stand, with no AI.
 range (5–15 m); the seller's pump is refuted (2.8–8.2 m³/day against the 8 needed), the second pump is proved
 (9.6–14.5 m³/day). The nameplates are demo plates.*
 
-Demo video (3 min): *link added on upload.* Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026),
+**Try it live: [engineer.vitalyreznik.com](https://engineer.vitalyreznik.com)** (a public demo on a small server:
+a few questions an hour per visitor, the heavy tasks off). Demo video (3 min): *link added on upload.* Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026),
 Indie track.
 
 ## What was built during the hackathon, and what was not
@@ -66,6 +67,8 @@ For example, in Claude Desktop's `claude_desktop_config.json`:
 
 ## Security
 
+- **The public demo** runs the same code with `ZTL_ENGINEER_PUBLIC=1` (`ztl_engineer/public.py`): its own host name
+  only, per-address limits, uploads up to 10 MB, no heavy runs, a $20 spending stop, behind Apache with HTTPS.
 - **Local only.** The server listens on 127.0.0.1 and answers only this machine's browser: a request whose Host or
   Origin is not localhost, or a POST that is not JSON, is refused (another web page open in the same browser cannot
   drive it). There are no accounts: do not put it on the internet as it is — anyone who could reach it could read
