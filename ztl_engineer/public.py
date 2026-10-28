@@ -4,7 +4,8 @@ ZTL_ENGINEER_PUBLIC=1; on a person's own machine nothing here applies.
 
 What it limits, and why:
   hosts      only the public name (ZTL_ENGINEER_HOSTS) and localhost — a DNS-rebinding page or a foreign site is refused
-  per IP     questions and recalculations: 10 an hour, 30 a day; new sessions and uploads: 30 an hour each
+  per IP     questions and recalculations: 20 an hour, 60 a day; new sessions and uploads: 60 an hour each
+             (raised 28.10 on the curator's word: judges sharing one office address must not be blocked)
   everyone   300 questions a day in all; the spending stop (ZTL_ENGINEER_SPEND_CAP_USD, $20 on the server) still holds
   heavy      no run over HEAVY_DESIGNS designs and no proved-range runs: minutes of all the server's cores
   size       uploads up to 10 MB
@@ -22,7 +23,7 @@ PUBLIC = os.environ.get("ZTL_ENGINEER_PUBLIC") == "1"
 LOCAL = {"localhost", "127.0.0.1", "::1"}
 HOSTS = LOCAL | {h.strip().lower() for h in os.environ.get("ZTL_ENGINEER_HOSTS", "").split(",") if h.strip()}
 MAX_UPLOAD = 10 * 1024 * 1024
-LIMITS = {"ask": [(3600, 10), (86400, 30)], "session": [(3600, 30)], "file": [(3600, 30)]}
+LIMITS = {"ask": [(3600, 20), (86400, 60)], "session": [(3600, 60)], "file": [(3600, 60)]}
 ALL_DAY = 300
 
 _LOCK = threading.Lock()
