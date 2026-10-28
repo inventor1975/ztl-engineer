@@ -18,11 +18,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from ztl_engineer import meta, presets, session as SS  # noqa: E402
+from ztl_engineer import meta, presets, public as PUB, session as SS  # noqa: E402
 
 WEB = HERE / "web"
 MAX_BODY = 40 * 1024 * 1024
-LOCAL = {"localhost", "127.0.0.1", "::1"}
 
 
 class H(BaseHTTPRequestHandler):
@@ -42,8 +41,9 @@ class H(BaseHTTPRequestHandler):
 
     def _body(self):
         n = int(self.headers.get("Content-Length") or 0)
-        if n > MAX_BODY:
-            raise ValueError("upload too large (40 MB at most)")
+        cap = PUB.MAX_UPLOAD * 4 // 3 + 4096 if PUB.PUBLIC else MAX_BODY     # base64 inflates by 4/3
+        if n > cap:
+            raise ValueError(f"upload too large ({cap * 3 // 4 // 2**20} MB at most)")
         return json.loads(self.rfile.read(n) or b"{}")
 
     def _local(self, post=False) -> bool:
@@ -53,10 +53,10 @@ class H(BaseHTTPRequestHandler):
         'simple' request that skipped the browser's CORS check."""
         import urllib.parse
         host = urllib.parse.urlsplit("//" + (self.headers.get("Host") or "")).hostname
-        if host not in LOCAL:
+        if host not in PUB.HOSTS:
             return False
         origin = self.headers.get("Origin")
-        if origin and urllib.parse.urlsplit(origin).hostname not in LOCAL:
+        if origin and urllib.parse.urlsplit(origin).hostname not in PUB.HOSTS:
             return False
         if post and (self.headers.get("Content-Type") or "").split(";")[0].strip() != "application/json":
             return False
@@ -89,7 +89,8 @@ class H(BaseHTTPRequestHandler):
                 return self._file(f)
             return self._send(404, {"error": "not found"})
         if p == "/api/presets":
-            return self._send(200, presets.PRESETS)
+            # the public demo hides the heavy tasks: minutes of every core of a small shared server
+            return self._send(200, [x for x in presets.PRESETS if not (PUB.PUBLIC and x.get("group", "").startswith("Heavy"))])
         if p == "/api/spend":
             return self._send(200, meta.spent() | {"cap": meta.CAP_USD})
         if p.startswith("/api/session/"):
@@ -152,6 +153,12 @@ class H(BaseHTTPRequestHandler):
         p = self.path.split("?")[0]
         try:
             d = self._body()
+            ip = PUB.client_ip(self)
+            kind = {"/api/session": "session"}.get(p) or {"file": "file", "message": "ask", "recalc": "ask"}.get(
+                p.split("/")[4] if len(p.split("/")) > 4 else "")
+            why = PUB.refuse(kind, ip) if kind else None
+            if why:
+                return self._send(429, {"error": why})
             if p == "/api/session":
                 s = SS.new(d.get("preset") or "any")
                 return self._send(200, s.view())

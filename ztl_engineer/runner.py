@@ -133,7 +133,12 @@ def start(brick: dict, on_done=None) -> str:
            "result": None, "note": "", "on_done": on_done}
 
     def go():
-        (_work_heavy if designs(brick) > HEAVY_DESIGNS else _work)(job, brick)
+        from . import public as PUB
+        if PUB.PUBLIC and designs(brick) > HEAVY_DESIGNS:
+            job.update(state="done", result={"verdict": "OPEN", "why": f"{designs(brick)} designs: too large for the "
+                       "public demo's small server — run ZTL Engineer on your own machine for this one"})
+        else:
+            (_work_heavy if designs(brick) > HEAVY_DESIGNS else _work)(job, brick)
         if on_done:
             try:
                 on_done(job)

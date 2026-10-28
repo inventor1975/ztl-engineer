@@ -346,6 +346,14 @@ class Session:
         """The proved range of each asked displacement: each END (min, max) in its own process (truss_end.py says
         why — the judgement does not split, the ends are independent), all side by side. Progress is the stand's
         own line per run on stderr ({"min": {"run": k, "bound": b, "verdict": v}})."""
+        from . import public as PUB
+        if PUB.PUBLIC:      # four processes for minutes: not on the public demo's small shared server
+            self.result = {"verdict": "OPEN", "why": "a proved range of a truss is a heavy run — not on the public "
+                           "demo; run ZTL Engineer on your own machine for it"}
+            self.warranty = warranty.judge("OPEN", self.values)
+            self._log("proved ranges are not run on the public demo")
+            self._record_run()
+            return
         import json as _json
         import subprocess as _sp
         import sys as _sys
