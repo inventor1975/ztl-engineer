@@ -1,23 +1,36 @@
 # ZTL Engineer
 
-An engineering design stand for people: describe what you need in plain words, drop in a photo of a nameplate, a
-datasheet PDF or your CAD export, and get a **proved** answer — the design works for every value the tolerances
-allow, or it provably fails and the stand names the requirements that conflict, or the honest "can't vouch yet".
+**An independent check of an engineering promise, for anyone.** Every pump, every solar kit comes with a seller's
+promise that it will work. To check it you need an engineer — and in developing countries, by a UNESCO estimate,
+there are fewer than five for every ten thousand people. ZTL Engineer lets a technician ask in their own language,
+with a phone photo of a nameplate or a datasheet, and get not an opinion but a **proof**: the design holds for every
+value the tolerances allow (EARNED), or it fails at a concrete point (REFUTED), or the honest "can't vouch yet" (OPEN).
 
 Meta's **Muse Spark** reads the photos and documents and turns the conversation into a formal design brick; the
 **ZTL stand** judges it. Muse Spark calls the stand itself (Responses API function calling): it checks its own
 brick, repairs the form on a BRICK ERROR, rewrites the laws on an OPEN — never the data or the question, which the
-tool refuses — and a verdict once EARNED or REFUTED is final. What the person sees is always the stand's answer. Every value the model read is listed with where it came from, marked "AI read"; correct
-any of them and press Recalculate to judge again.
+tool refuses — and a verdict once EARNED or REFUTED is final. What the person sees is always the stand's answer.
+Every value the model read is listed with where it came from, marked "AI read"; correct any of them and press
+Recalculate to judge again. Every answer downloads as a report and as the stand's own problem file, which anyone can
+run again on the open-source stand, with no AI.
 
-Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026).
+![A village borehole, asked in French: the seller's pump REFUTED, the second pump EARNED](docs/screenshot.png)
+
+*A village borehole, asked in French with a photo of the pump's nameplate. The unmeasured drawdown goes in as a
+range (5–15 m); the seller's pump is refuted (2.8–8.2 m³/day against the 8 needed), the second pump is proved
+(9.6–14.5 m³/day). The nameplates are demo plates.*
+
+Demo video (3 min): *link added on upload.* Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026),
+Indie track.
 
 ## What was built during the hackathon, and what was not
 
-**Built during the hackathon (everything in this repository):** the web application, the Muse Spark agent
-(reading photos/PDFs, building and repairing the brick from the conversation), the "AI read" values with Recalculate, the task
-presets and hints, the progress view, the spending stop, and the help page. The repository was created after the
-kickoff on Oct 26, 2026; its history is the record.
+**Built during the hackathon (everything in this repository):** the web application; the Muse Spark agent that
+reads photos and PDFs and checks its own brick with the stand through function calling, under rules it cannot bend;
+the "AI read" values with Recalculate; the CAD road (SPICE netlist + BOM, truss deck) and the proved-range runs; the
+task presets with demo files; the reports and downloads; the MCP server; the spending stop; the security hardening;
+the help page; and the tooling that recorded the demo video. The repository was created after the kickoff on
+Oct 26, 2026; its history is the record.
 
 **Pre-existing, used as dependencies (not hackathon work):**
 - [ZTL — Zero-Trust Logic](https://github.com/inventor1975/ZTL) (public since July 2026, Apache-2.0) — the logic
@@ -29,10 +42,14 @@ Both are by the same author and are installed beside this repository; nothing fr
 
 ## Run it
 
-Clone [ZTL](https://github.com/inventor1975/ZTL) and [ztl-stand](https://github.com/inventor1975/ztl-stand) beside
-this repository, put a Meta Model API key in `META_API_KEY` or `~/.config/meta-api-key`, then:
+Python 3.10+ (standard library only), and `pdftoppm` (poppler-utils) for PDF datasheets. Clone
+[ZTL](https://github.com/inventor1975/ZTL) and [ztl-stand](https://github.com/inventor1975/ztl-stand) beside this
+repository, put a Meta Model API key in `META_API_KEY` or `~/.config/meta-api-key`, then:
 
     python3 server.py            # http://localhost:8090
+
+Pick a task (or ask anything), press "Use this example" — it brings its demo file — and Send. A check costs a few
+cents of Meta API credit (measured: 2.7 cents a model call on average).
 
 ## Use it from any AI agent (MCP)
 
