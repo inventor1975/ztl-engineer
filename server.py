@@ -145,7 +145,10 @@ class H(BaseHTTPRequestHandler):
         ctype = mimetypes.guess_type(str(f))[0] or "application/octet-stream"
         if ctype.startswith("text/") or ctype in ("application/javascript",):
             ctype += "; charset=utf-8"
-        return self._send(200, f.read_bytes(), ctype)
+        raw = f.read_bytes()
+        if f.suffix == ".html":                       # the public demo counts visits; a local copy does not
+            raw = raw.replace(b"</head>", PUB.analytics_tag() + b"</head>", 1)
+        return self._send(200, raw, ctype)
 
     def do_POST(self):
         if not self._local(post=True):

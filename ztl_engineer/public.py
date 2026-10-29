@@ -20,6 +20,17 @@ import time
 from collections import defaultdict, deque
 
 PUBLIC = os.environ.get("ZTL_ENGINEER_PUBLIC") == "1"
+# Visit counting on the public demo only (2026-10-30): a self-hosted Umami (no cookies, no personal data). The website
+# id comes from the server's environment, never from the repository, so a person's own copy counts nothing.
+UMAMI = os.environ.get("ZTL_ENGINEER_UMAMI", "").strip() if PUBLIC else ""
+UMAMI_SRC = os.environ.get("ZTL_ENGINEER_UMAMI_SRC", "https://umami.vitalyreznik.com/script.js")
+
+
+def analytics_tag() -> bytes:
+    """The Umami script tag for the public demo's pages, or nothing."""
+    if not UMAMI or not all(c.isalnum() or c == "-" for c in UMAMI):
+        return b""
+    return f'<script defer src="{UMAMI_SRC}" data-website-id="{UMAMI}"></script>\n'.encode()
 LOCAL = {"localhost", "127.0.0.1", "::1"}
 HOSTS = LOCAL | {h.strip().lower() for h in os.environ.get("ZTL_ENGINEER_HOSTS", "").split(",") if h.strip()}
 MAX_UPLOAD = 10 * 1024 * 1024
