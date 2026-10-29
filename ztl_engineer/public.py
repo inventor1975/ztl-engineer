@@ -1,4 +1,4 @@
-"""The public demo mode (engineer.vitalyreznik.com, 2026-10-28): the same app behind Apache on a small shared server
+"""The public demo mode (engineer.ztljudge.com, formerly engineer.vitalyreznik.com, 2026-10-28): the same app behind Apache on a small shared server
 (2 cores, 3 GB, beside a blog and two other services), paid for by the author's Meta API key. Off unless
 ZTL_ENGINEER_PUBLIC=1; on a person's own machine nothing here applies.
 
